@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WINDY — Move With The Flow</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+:root{--cream:#f5f0e8;--ww:#faf8f3;--ow:#ede9df;--ink:#0e0d0b;--coal:#1a1916;--mid:#6b6760;--dim:#9a9690;--brd:rgba(14,13,11,.12);--brdh:rgba(14,13,11,.25);--acc:#c8a96e;--red:#8b1a1a;--grn:#2d6a4f;}
+*{margin:0;padding:0;box-sizing:border-box;}html{scroll-behavior:smooth;}
+body{background:var(--ww);color:var(--ink);font-family:'DM Mono',monospace;overflow-x:hidden;cursor:none;}
+body.noscroll{overflow:hidden;}
+body::before{content:'';position:fixed;inset:0;z-index:500;pointer-events:none;opacity:.03;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+#cur{position:fixed;width:8px;height:8px;background:var(--ink);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .2s,height .2s,background .2s;}
+#cur-r{position:fixed;width:28px;height:28px;border:1px solid rgba(14,13,11,.35);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .3s,height .3s;}
+body:has(a:hover) #cur,body:has(button:hover) #cur{width:14px;height:14px;background:var(--acc);}
+body:has(a:hover) #cur-r,body:has(button:hover) #cur-r{width:44px;height:44px;border-color:var(--acc);}
+
+/* CART DRAWER */
+#cart-ov{position:fixed;inset:0;background:rgba(14,13,11,.5);z-index:800;opacity:0;pointer-events:none;transition:opacity .4s;backdrop-filter:blur(4px);}
+#cart-ov.on{opacity:1;pointer-events:all;}
+#cart-drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100vw);background:var(--ww);z-index:900;transform:translateX(100%);transition:transform .45s cubic-bezier(.16,1,.3,1);display:flex;flex-direction:column;overflow:hidden;border-left:1px solid var(--brd);}
+#cart-drawer.on{transform:translateX(0);}
+.c-head{display:flex;align-items:center;justify-content:space-between;padding:22px 28px;border-bottom:1px solid var(--brd);flex-shrink:0;}
+.c-head h2{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;}
+.c-head-r{display:flex;align-items:center;gap:16px;}
+.c-badge{background:var(--ink);color:var(--cream);font-size:9px;letter-spacing:1px;padding:3px 10px;}
+.c-close{background:none;border:1px solid var(--brd);width:34px;height:34px;font-size:16px;cursor:pointer;color:var(--mid);transition:all .2s;display:flex;align-items:center;justify-content:center;}
+.c-close:hover{background:var(--ink);color:var(--cream);border-color:var(--ink);}
+.c-tabs{display:flex;border-bottom:1px solid var(--brd);flex-shrink:0;}
+.c-tab{flex:1;padding:13px;background:none;border:none;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;color:var(--dim);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;}
+.c-tab.on{color:var(--ink);border-bottom-color:var(--ink);}
+#p-bag{display:flex;flex-direction:column;flex:1;overflow:hidden;}
+#p-checkout{display:none;flex-direction:column;flex:1;overflow:hidden;}
+#p-success{display:none;flex-direction:column;flex:1;align-items:center;justify-content:center;padding:40px 28px;text-align:center;gap:18px;}
+.c-items{flex:1;overflow-y:auto;padding:0;}
+.c-items::-webkit-scrollbar{width:3px;}
+.c-items::-webkit-scrollbar-thumb{background:var(--brdh);}
+.c-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;color:var(--dim);}
+.c-empty p{font-size:10px;letter-spacing:2px;text-transform:uppercase;}
+.c-item{display:grid;grid-template-columns:80px 1fr auto;gap:14px;padding:18px 28px;border-bottom:1px solid var(--brd);align-items:start;}
+.c-item-img{width:80px;height:80px;background:var(--ow);border:1px solid var(--brd);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;}
+.ci-n{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;margin-bottom:3px;}
+.ci-m{font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:10px;}
+.ci-qty{display:flex;align-items:center;}
+.ci-qty button{width:26px;height:26px;background:none;border:1px solid var(--brd);font-size:14px;cursor:pointer;color:var(--mid);transition:all .2s;display:flex;align-items:center;justify-content:center;}
+.ci-qty button:hover{background:var(--ink);color:var(--cream);border-color:var(--ink);}
+.ci-qty span{width:34px;text-align:center;font-size:12px;border-top:1px solid var(--brd);border-bottom:1px solid var(--brd);line-height:26px;}
+.ci-rm{background:none;border:none;color:var(--dim);cursor:pointer;font-size:10px;letter-spacing:1px;margin-top:7px;padding:0;transition:color .2s;display:block;}
+.ci-rm:hover{color:var(--red);}
+.ci-price{font-size:13px;color:var(--ink);white-space:nowrap;}
+.c-sum{padding:18px 28px;border-top:1px solid var(--brd);background:var(--ow);flex-shrink:0;}
+.sum-row{display:flex;justify-content:space-between;margin-bottom:9px;font-size:11px;}
+.sum-row span:first-child{color:var(--mid);letter-spacing:1px;text-transform:uppercase;font-size:9px;}
+.sum-row.tot{font-size:15px;font-weight:700;padding-top:11px;border-top:1px solid var(--brd);margin-top:3px;}
+.sum-row.tot span:first-child{color:var(--ink);font-size:13px;letter-spacing:2px;}
+.btn-co{width:100%;padding:15px;background:var(--ink);color:var(--cream);border:none;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;margin-top:14px;transition:all .3s;}
+.btn-co:hover{background:var(--coal);}
+.ship-msg{text-align:center;font-size:9px;letter-spacing:2px;color:var(--grn);text-transform:uppercase;margin-top:9px;}
+
+/* CHECKOUT SCROLL */
+.co-scroll{flex:1;overflow-y:auto;padding:22px 28px;}
+.co-scroll::-webkit-scrollbar{width:3px;}
+.co-scroll::-webkit-scrollbar-thumb{background:var(--brdh);}
+.co-sec{margin-bottom:26px;}
+.co-sec-t{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--mid);margin-bottom:13px;display:flex;align-items:center;gap:12px;}
+.co-sec-t::after{content:'';flex:1;height:1px;background:var(--brd);}
+.co-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.co-1{display:grid;gap:10px;}
+.co-f{display:flex;flex-direction:column;gap:4px;}
+.co-f label{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);}
+.co-f input,.co-f select{background:var(--ow);border:1px solid var(--brd);padding:11px 13px;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink);outline:none;transition:border-color .2s;width:100%;-webkit-appearance:none;}
+.co-f input:focus,.co-f select:focus{border-color:var(--ink);}
+.co-f input::placeholder{color:var(--dim);}
+.pay-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.pay-m{border:1px solid var(--brd);padding:12px 6px;text-align:center;cursor:pointer;transition:all .2s;background:var(--ow);}
+.pay-m.on{border-color:var(--ink);background:var(--ww);}
+.pay-m .pi{display:block;margin:0 auto 5px;font-size:20px;}
+.pay-m span{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--mid);}
+.pay-m.on span{color:var(--ink);}
+.co-oi{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--brd);}
+.co-oi:last-child{border-bottom:none;}
+.co-oi-l{display:flex;align-items:center;gap:11px;}
+.co-oi-img{width:42px;height:42px;background:var(--ow);border:1px solid var(--brd);display:flex;align-items:center;justify-content:center;font-size:17px;}
+.co-oi-info{font-size:11px;}
+.co-oi-info .n{color:var(--ink);margin-bottom:2px;}
+.co-oi-info .m{color:var(--dim);font-size:9px;letter-spacing:1px;}
+.co-totals{background:var(--ow);padding:14px;margin-top:14px;}
+.co-tr{display:flex;justify-content:space-between;font-size:11px;margin-bottom:7px;color:var(--mid);}
+.co-tr.g{font-size:13px;color:var(--ink);font-weight:700;padding-top:9px;border-top:1px solid var(--brd);margin-top:3px;}
+.co-foot{padding:18px 28px;border-top:1px solid var(--brd);background:var(--ow);flex-shrink:0;}
+.btn-place{width:100%;padding:15px;background:var(--ink);color:var(--cream);border:none;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;}
+.btn-place:hover{background:var(--coal);}
+.btn-place.loading::after{content:'';position:absolute;bottom:0;left:0;height:2px;background:var(--acc);animation:loadbar 2s ease-in-out forwards;}
+@keyframes loadbar{from{width:0}to{width:100%}}
+.suc-check{width:60px;height:60px;border:2px solid var(--grn);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;}
+.suc-t{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;}
+.suc-s{font-size:10px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;line-height:1.8;}
+.suc-ord{background:var(--ow);padding:14px 22px;border:1px solid var(--brd);font-size:11px;letter-spacing:2px;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:20px 48px;background:rgba(250,248,243,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--brd);}
+.n-logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:8px;color:var(--ink);position:relative;text-decoration:none;}
+.n-logo::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;background:var(--ink);}
+.n-links{display:flex;gap:40px;list-style:none;}
+.n-links a{color:var(--mid);text-decoration:none;font-size:10px;letter-spacing:3px;text-transform:uppercase;transition:color .2s;}
+.n-links a:hover{color:var(--ink);}
+.n-cart{background:var(--ink);color:var(--cream);border:none;padding:9px 22px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .25s;position:relative;}
+.n-cart:hover{background:var(--acc);}
+.n-dot{position:absolute;top:-4px;right:-4px;width:14px;height:14px;background:var(--acc);border-radius:50%;font-size:8px;display:none;align-items:center;justify-content:center;color:var(--ink);font-weight:700;}
+.n-dot.show{display:flex;}
+
+/* HERO */
+#hero{min-height:100vh;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding-top:80px;}
+.h-pl,.h-pr{position:absolute;top:0;bottom:0;width:80px;background:var(--ow);display:flex;align-items:center;justify-content:center;}
+.h-pl{left:0;border-right:1px solid var(--brd);}
+.h-pr{right:0;border-left:1px solid var(--brd);}
+.side-t{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--dim);writing-mode:vertical-rl;}
+.batik-bg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.batik-bg svg{position:absolute;width:100%;height:100%;opacity:.04;}
+.h-center{text-align:center;position:relative;z-index:2;padding:0 100px;}
+.h-eyebrow{font-size:9px;letter-spacing:6px;color:var(--mid);text-transform:uppercase;margin-bottom:32px;display:flex;align-items:center;justify-content:center;gap:16px;opacity:0;animation:fup .8s .3s forwards;}
+.ey-l{width:40px;height:1px;background:var(--dim);}
+.h-logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(80px,16vw,200px);line-height:.85;letter-spacing:8px;color:var(--ink);position:relative;opacity:0;animation:lin 1.2s .5s cubic-bezier(.16,1,.3,1) forwards;}
+.h-logo-o{font-family:'Bebas Neue',sans-serif;font-size:clamp(80px,16vw,200px);line-height:.85;letter-spacing:8px;position:absolute;top:6px;left:0;right:0;-webkit-text-stroke:1px rgba(14,13,11,.08);color:transparent;pointer-events:none;}
+@keyframes lin{from{opacity:0;transform:translateY(30px) scaleY(1.05)}to{opacity:1;transform:translateY(0) scaleY(1)}}
+@keyframes fup{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.h-tag{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;font-size:clamp(16px,2.2vw,24px);color:var(--mid);letter-spacing:4px;margin-top:20px;opacity:0;animation:fup .8s .9s forwards;}
+.h-sub{font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-top:8px;opacity:0;animation:fup .8s 1.1s forwards;}
+.h-cta{display:flex;gap:16px;justify-content:center;margin-top:48px;opacity:0;animation:fup .8s 1.2s forwards;}
+.btn-ink{background:var(--ink);color:var(--cream);border:none;padding:14px 44px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:all .3s;text-decoration:none;display:inline-block;}
+.btn-ink:hover{background:var(--coal);transform:translateY(-2px);box-shadow:0 8px 24px rgba(14,13,11,.2);}
+.btn-out{background:none;color:var(--ink);border:1px solid var(--brdh);padding:14px 44px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:all .3s;text-decoration:none;display:inline-block;}
+.btn-out:hover{background:var(--ow);}
+.h-orn{margin-top:60px;display:flex;align-items:center;justify-content:center;gap:20px;opacity:0;animation:fup .8s 1.4s forwards;}
+.o-line{width:60px;height:1px;background:var(--brdh);}
+.o-dia{width:8px;height:8px;background:var(--ink);transform:rotate(45deg);}
+.o-dot{width:4px;height:4px;background:var(--dim);border-radius:50%;}
+.h-bot{position:absolute;bottom:40px;left:0;right:0;display:flex;justify-content:space-between;padding:0 100px;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;}
+
+/* TAPE */
+.tape{background:var(--ink);color:var(--cream);padding:14px 0;overflow:hidden;}
+.tape-tr{display:flex;white-space:nowrap;animation:tapego 18s linear infinite;}
+.tape-tr.rev{animation-direction:reverse;animation-duration:22s;}
+@keyframes tapego{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ti{display:inline-flex;align-items:center;gap:20px;padding:0 28px;font-size:10px;letter-spacing:4px;text-transform:uppercase;}
+.ti .dia{width:5px;height:5px;background:var(--acc);transform:rotate(45deg);flex-shrink:0;}
+
+/* KOLAM */
+.kd{display:flex;align-items:center;justify-content:center;padding:28px 48px;border-top:1px solid var(--brd);border-bottom:1px solid var(--brd);background:var(--ow);overflow:hidden;}
+.kd svg{width:100%;max-width:900px;opacity:.45;}
+
+/* SECTIONS */
+.s-lbl{font-size:9px;letter-spacing:5px;color:var(--mid);text-transform:uppercase;display:flex;align-items:center;gap:16px;margin-bottom:12px;}
+.s-lbl::before{content:'';width:32px;height:1px;background:var(--mid);}
+.s-ttl{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:clamp(40px,6vw,72px);line-height:.95;letter-spacing:1px;margin-bottom:48px;}
+
+/* FEATURED */
+#featured{padding:100px 48px;}
+.fi{max-width:1400px;margin:0 auto;}
+.pg{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--brd);border:1px solid var(--brd);}
+.pc{background:var(--ww);position:relative;overflow:hidden;transition:all .4s cubic-bezier(.16,1,.3,1);cursor:pointer;}
+.pc:hover{background:var(--cream);}
+.piw{height:440px;position:relative;overflow:hidden;background:var(--ow);border-bottom:1px solid var(--brd);}
+.piw img{width:100%;height:100%;object-fit:cover;transition:transform .6s cubic-bezier(.16,1,.3,1);display:block;}
+.pc:hover .piw img{transform:scale(1.04);}
+.lbad{position:absolute;top:0;left:0;z-index:2;background:var(--ink);color:var(--cream);padding:6px 16px;font-size:8px;letter-spacing:3px;text-transform:uppercase;}
+.lobad{position:absolute;top:0;right:0;z-index:2;background:var(--red);color:#fff;padding:6px 14px;font-size:8px;letter-spacing:2px;text-transform:uppercase;}
+.nbad{position:absolute;top:0;right:0;z-index:2;background:var(--grn);color:#fff;padding:6px 14px;font-size:8px;letter-spacing:2px;text-transform:uppercase;}
+.pin{padding:26px 26px 30px;}
+.pin h3{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;letter-spacing:1px;margin-bottom:5px;}
+.pcat{font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:14px;}
+.pprice{font-size:17px;color:var(--ink);font-family:'DM Mono',monospace;margin-bottom:18px;}
+.pprice s{color:var(--dim);font-size:13px;margin-left:7px;}
+.sw{margin-bottom:18px;}
+.si{display:flex;justify-content:space-between;margin-bottom:5px;}
+.si span{font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;}
+.si strong{color:var(--red);font-size:9px;font-weight:400;}
+.st{height:2px;background:rgba(14,13,11,.08);}
+.sb{height:2px;background:var(--ink);}
+.szs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;}
+.sz{width:35px;height:35px;background:none;border:1px solid var(--brdh);color:var(--mid);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:all .2s;}
+.sz:hover,.sz.on{background:var(--ink);color:var(--cream);border-color:var(--ink);}
+.abtn{width:100%;padding:13px;background:none;border:1px solid var(--ink);color:var(--ink);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:all .3s;}
+.abtn:hover{background:var(--ink);color:var(--cream);}
+
+/* COUNTDOWN */
+.dsec{background:var(--ink);color:var(--cream);padding:60px 48px;display:flex;align-items:center;justify-content:center;gap:80px;position:relative;overflow:hidden;}
+.dsec::before{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.015) 0,rgba(255,255,255,.015) 1px,transparent 1px,transparent 60px),repeating-linear-gradient(90deg,rgba(255,255,255,.015) 0,rgba(255,255,255,.015) 1px,transparent 1px,transparent 60px);}
+.dey{font-size:9px;letter-spacing:5px;color:var(--acc);text-transform:uppercase;margin-bottom:11px;}
+.dtt{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:300;letter-spacing:3px;font-style:italic;}
+.cdu{display:flex;align-items:center;}
+.cdu-u{text-align:center;padding:0 22px;}
+.cdu-n{font-family:'Bebas Neue',sans-serif;font-size:62px;line-height:1;color:var(--cream);}
+.cdu-l{font-size:8px;letter-spacing:3px;color:rgba(245,240,232,.4);text-transform:uppercase;margin-top:3px;}
+.cdu-s{font-family:'Bebas Neue',sans-serif;font-size:62px;color:rgba(245,240,232,.2);padding-bottom:14px;}
+.dorn{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.dorn .vl{width:1px;height:38px;background:rgba(245,240,232,.15);}
+
+/* LOOKS */
+#looks{padding:100px 48px;background:var(--ow);}
+.li{max-width:1400px;margin:0 auto;}
+.lg{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto;gap:1px;background:var(--brd);border:1px solid var(--brd);}
+.look{position:relative;overflow:hidden;cursor:pointer;}
+.look.tall{grid-row:span 2;}
+.look img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s cubic-bezier(.16,1,.3,1);}
+.look.tall img{height:600px;}
+.look:not(.tall) img{height:295px;}
+.look:hover img{transform:scale(1.05);}
+.look-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,13,11,.7) 0%,transparent 50%);opacity:0;transition:opacity .4s;display:flex;align-items:flex-end;padding:22px;}
+.look:hover .look-ov{opacity:1;}
+.lc h4{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:var(--cream);margin-bottom:3px;}
+.lc p{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(245,240,232,.7);}
+
+/* ABOUT */
+#about{padding:100px 48px;}
+.ag{max-width:1400px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;}
+.av{position:relative;aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:var(--ow);border:1px solid var(--brd);overflow:hidden;}
+.av-s1{position:absolute;inset:20px;border:1px solid var(--brd);}
+.av-s2{position:absolute;inset:40px;border:1px solid rgba(14,13,11,.06);transform:rotate(45deg);}
+.av-let{font-family:'Bebas Neue',sans-serif;font-size:160px;line-height:1;color:var(--ink);opacity:.06;position:absolute;}
+.av-lbl{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);font-size:8px;letter-spacing:4px;color:var(--dim);text-transform:uppercase;white-space:nowrap;}
+.av-yr{position:absolute;top:22px;right:22px;font-family:'Cormorant Garamond',serif;font-size:13px;font-style:italic;color:var(--dim);}
+.at p{font-family:'Cormorant Garamond',serif;font-size:18px;line-height:1.9;color:var(--mid);margin-bottom:18px;font-weight:300;}
+.at p strong{color:var(--ink);font-weight:600;}
+.as{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--brd);border:1px solid var(--brd);margin-top:46px;}
+.astat{background:var(--ww);padding:26px 18px;text-align:center;}
+.astat-n{font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:700;line-height:1;}
+.astat-l{font-size:8px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-top:5px;}
+
+/* HERITAGE */
+.hs{padding:80px 48px;background:var(--ink);color:var(--cream);display:grid;grid-template-columns:1fr 2px 1fr 2px 1fr;}
+.hd{background:rgba(245,240,232,.1);}
+.hb{padding:0 60px;text-align:center;}
+.hb:first-child{padding-left:0;}
+.hb:last-child{padding-right:0;}
+.hn{font-family:'Bebas Neue',sans-serif;font-size:70px;line-height:1;}
+.hl{font-size:9px;letter-spacing:4px;color:rgba(245,240,232,.4);text-transform:uppercase;margin-top:7px;}
+.hdc{font-family:'Cormorant Garamond',serif;font-size:14px;color:rgba(245,240,232,.5);font-style:italic;margin-top:9px;line-height:1.6;}
+
+/* CONTACT */
+#contact{padding:100px 48px;max-width:900px;margin:0 auto;}
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:48px;}
+.cf{display:grid;gap:1px;background:var(--brd);border:1px solid var(--brd);}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:1px;}
+.ff{background:var(--ww);border:none;padding:17px 19px;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink);outline:none;width:100%;letter-spacing:1px;transition:background .2s;}
+.ff:focus{background:var(--cream);}
+.ff::placeholder{color:var(--dim);}
+textarea.ff{resize:none;height:110px;}
+
+/* FOOTER */
+footer{border-top:1px solid var(--brd);display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:60px;padding:60px 48px 40px;}
+.fl{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:8px;display:block;margin-bottom:14px;}
+.ft{font-family:'Cormorant Garamond',serif;font-size:14px;color:var(--mid);line-height:1.8;max-width:250px;font-style:italic;}
+.fc h5{font-size:9px;letter-spacing:4px;color:var(--ink);text-transform:uppercase;margin-bottom:18px;padding-bottom:11px;border-bottom:1px solid var(--brd);}
+.fc a{display:block;color:var(--mid);text-decoration:none;font-size:12px;margin-bottom:9px;transition:color .2s;}
+.fc a:hover{color:var(--ink);}
+.fb{border-top:1px solid var(--brd);padding:18px 48px;display:flex;justify-content:space-between;align-items:center;font-size:9px;color:var(--dim);letter-spacing:2px;}
+.sr{display:flex;gap:11px;}
+.sc{width:30px;height:30px;border:1px solid var(--brd);display:flex;align-items:center;justify-content:center;color:var(--dim);text-decoration:none;font-size:10px;transition:all .2s;}
+.sc:hover{border-color:var(--ink);color:var(--ink);}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .8s,transform .8s cubic-bezier(.16,1,.3,1);}
+.reveal.vis{opacity:1;transform:translateY(0);}
+
+/* TOAST */
+#toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--ink);color:var(--cream);z-index:9990;padding:13px 26px;font-size:10px;letter-spacing:2px;text-transform:uppercase;opacity:0;transition:all .4s;pointer-events:none;border-left:3px solid var(--acc);white-space:nowrap;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+@media(max-width:900px){
+  nav{padding:16px 20px;}.n-links{display:none;}
+  .h-pl,.h-pr{display:none;}.h-center{padding:0 20px;}.h-bot{display:none;}
+  .pg,.lg{grid-template-columns:1fr;}.look.tall{grid-row:auto;}
+  .look.tall img,.look:not(.tall) img{height:320px;}
+  .ag{grid-template-columns:1fr;}
+  #featured,#about,#looks,#contact{padding:60px 20px;}
+  footer{grid-template-columns:1fr 1fr;padding:40px 20px 20px;gap:36px;}
+  .fb{flex-direction:column;gap:11px;padding:18px;text-align:center;}
+  .hs{grid-template-columns:1fr;padding:60px 20px;}.hd{display:none;}
+  .hb{padding:18px 0;border-top:1px solid rgba(245,240,232,.1);}
+  .dsec{flex-direction:column;gap:36px;padding:40px 20px;}
+  .cdu{flex-wrap:wrap;justify-content:center;}
+  .cg{grid-template-columns:1fr;}
+  .kd{padding:18px;}
+  #cart-drawer{width:100vw;}
+  .co-2{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div id="cur"></div><div id="cur-r"></div>
+
+<!-- CART -->
+<div id="cart-ov" onclick="closeCart()"></div>
+<div id="cart-drawer">
+  <div class="c-head">
+    <h2>Your Cart</h2>
+    <div class="c-head-r">
+      <span class="c-badge" id="drawerCount">0 items</span>
+      <button class="c-close" onclick="closeCart()">✕</button>
+    </div>
+  </div>
+  <div class="c-tabs">
+    <button class="c-tab on" id="t-bag" onclick="goTab('bag')">Bag</button>
+    <button class="c-tab" id="t-co" onclick="goTab('co')">Checkout</button>
+    <button class="c-tab" id="t-ok" style="display:none" onclick="goTab('ok')">Confirmed</button>
+  </div>
+
+  <!-- BAG -->
+  <div id="p-bag">
+    <div class="c-items" id="cList">
+      <div class="c-empty" id="cEmpty">
+        <svg width="46" height="46" viewBox="0 0 46 46" fill="none"><rect x="7" y="15" width="32" height="27" rx="2" stroke="#0e0d0b" stroke-width="1.4"/><path d="M15 15V11a8 8 0 0116 0v4" stroke="#0e0d0b" stroke-width="1.4"/></svg>
+        <p>Your bag is empty</p>
+      </div>
+    </div>
+    <div class="c-sum" id="cSum" style="display:none">
+      <div class="sum-row"><span>Subtotal</span><span id="sSub">LKR 0</span></div>
+      <div class="sum-row"><span>Shipping</span><span>Free</span></div>
+      <div class="sum-row tot"><span>Total</span><span id="sTot">LKR 0</span></div>
+      <button class="btn-co" onclick="goTab('co')">Proceed to Checkout →</button>
+      <p class="ship-msg">✓ Free island-wide shipping on all orders</p>
+    </div>
+  </div>
+
+  <!-- CHECKOUT -->
+  <div id="p-checkout">
+    <div class="co-scroll">
+      <div class="co-sec">
+        <div class="co-sec-t">Order Summary</div>
+        <div id="coItems"></div>
+        <div class="co-totals">
+          <div class="co-tr"><span>Subtotal</span><span id="coSub">LKR 0</span></div>
+          <div class="co-tr"><span>Shipping</span><span>Free</span></div>
+          <div class="co-tr g"><span>Total</span><span id="coTot">LKR 0</span></div>
+        </div>
+      </div>
+      <div class="co-sec">
+        <div class="co-sec-t">Delivery Details</div>
+        <div class="co-2" style="margin-bottom:10px">
+          <div class="co-f"><label>First Name</label><input type="text" placeholder="Ashan" id="fn"></div>
+          <div class="co-f"><label>Last Name</label><input type="text" placeholder="Fernando" id="ln"></div>
+        </div>
+        <div class="co-1" style="margin-bottom:10px">
+          <div class="co-f"><label>Email</label><input type="email" placeholder="ashan@email.com" id="em"></div>
+        </div>
+        <div class="co-1" style="margin-bottom:10px">
+          <div class="co-f"><label>Phone Number</label><input type="tel" placeholder="+94 77 123 4567" id="ph"></div>
+        </div>
+        <div class="co-1" style="margin-bottom:10px">
+          <div class="co-f"><label>Address Line 1</label><input type="text" placeholder="No. 42, Galle Road" id="a1"></div>
+        </div>
+        <div class="co-1" style="margin-bottom:10px">
+          <div class="co-f"><label>Address Line 2 (optional)</label><input type="text" placeholder="Apt / Floor / Building"></div>
+        </div>
+        <div class="co-2" style="margin-bottom:10px">
+          <div class="co-f"><label>City</label><input type="text" placeholder="Colombo" id="cy"></div>
+          <div class="co-f"><label>Postal Code</label><input type="text" placeholder="00300"></div>
+        </div>
+        <div class="co-1" style="margin-bottom:10px">
+          <div class="co-f"><label>Province</label>
+            <select id="prov">
+              <option value="">Select Province</option>
+              <option>Western Province</option><option>Central Province</option>
+              <option>Southern Province</option><option>Northern Province</option>
+              <option>Eastern Province</option><option>North Western Province</option>
+              <option>North Central Province</option><option>Uva Province</option>
+              <option>Sabaragamuwa Province</option>
+            </select>
+          </div>
+        </div>
+        <div class="co-1">
+          <div class="co-f"><label>Order Notes (optional)</label><input type="text" placeholder="Leave at gate, ring bell, etc." id="notes"></div>
+        </div>
+      </div>
+      <div class="co-sec">
+        <div class="co-sec-t">Payment Method</div>
+        <div class="pay-row">
+          <div class="pay-m on" onclick="setPay(this,'card')"><span class="pi">💳</span><span>Card</span></div>
+          <div class="pay-m" onclick="setPay(this,'cod')"><span class="pi">💵</span><span>Cash on Delivery</span></div>
+          <div class="pay-m" onclick="setPay(this,'bank')"><span class="pi">🏦</span><span>Bank Transfer</span></div>
+        </div>
+        <div id="pf-card">
+          <div class="co-f" style="margin-bottom:10px"><label>Card Number</label><input type="text" placeholder="1234  5678  9012  3456" maxlength="22" id="cnum" oninput="fmtCard(this)"></div>
+          <div class="co-2" style="margin-bottom:10px">
+            <div class="co-f"><label>Expiry</label><input type="text" placeholder="MM / YY" maxlength="7" oninput="fmtExp(this)"></div>
+            <div class="co-f"><label>CVV</label><input type="password" placeholder="•••" maxlength="4"></div>
+          </div>
+          <div class="co-f"><label>Cardholder Name</label><input type="text" placeholder="ASHAN FERNANDO" style="text-transform:uppercase"></div>
+        </div>
+        <div id="pf-cod" style="display:none;background:var(--ow);padding:15px;border:1px solid var(--brd)">
+          <p style="font-size:11px;color:var(--mid);line-height:1.8">Pay cash when your order is delivered. Our rider collects the exact amount. Please have it ready.</p>
+        </div>
+        <div id="pf-bank" style="display:none;background:var(--ow);padding:15px;border:1px solid var(--brd)">
+          <p style="font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:11px">Bank Details</p>
+          <p style="font-size:11px;color:var(--mid);line-height:2.1">Bank: <strong style="color:var(--ink)">Commercial Bank of Ceylon</strong><br>Account: <strong style="color:var(--ink)">Windy Apparel Pvt Ltd</strong><br>Acc No: <strong style="color:var(--ink)">1234567890</strong><br>Branch: <strong style="color:var(--ink)">Colombo 03</strong></p>
+          <p style="font-size:9px;letter-spacing:1px;color:var(--dim);margin-top:10px">Send slip to hello@windy.lk after transfer.</p>
+        </div>
+      </div>
+    </div>
+    <div class="co-foot">
+      <button class="btn-place" id="placeBtn" onclick="placeOrder()">Place Order</button>
+      <p style="text-align:center;font-size:9px;letter-spacing:1px;color:var(--dim);margin-top:9px">🔒 Secure checkout · Free returns · Island-wide delivery</p>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div id="p-success">
+    <div class="suc-check">✓</div>
+    <div class="suc-t">Order Placed!</div>
+    <p class="suc-s">Thank you for shopping with WINDY.<br>Confirmation sent to your email &amp; phone.</p>
+    <div class="suc-ord" id="ordNum">Order #WDY-00000</div>
+    <p style="font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase">Estimated delivery: 2–4 business days</p>
+    <button class="btn-ink" style="margin-top:6px" onclick="resetCart()">Continue Shopping</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <a href="#hero" class="n-logo">WINDY</a>
+  <ul class="n-links">
+    <li><a href="#hero">Home</a></li>
+    <li><a href="#featured">Drops</a></li>
+    <li><a href="#looks">Looks</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <button class="n-cart" onclick="openCart()">Cart (<span id="ncc">0</span>)<span class="n-dot" id="ndot"></span></button>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="h-pl"><span class="side-t">Sri Lanka × Street × Culture</span></div>
+  <div class="h-pr"><span class="side-t">SS 2026 — Limited Edition</span></div>
+  <div class="batik-bg">
+    <svg viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+      <defs><pattern id="bt" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+        <circle cx="50" cy="50" r="30" fill="none" stroke="#0e0d0b" stroke-width=".5"/>
+        <circle cx="50" cy="50" r="18" fill="none" stroke="#0e0d0b" stroke-width=".3"/>
+        <circle cx="50" cy="50" r="8" fill="none" stroke="#0e0d0b" stroke-width=".3"/>
+        <circle cx="50" cy="50" r="2" fill="#0e0d0b"/>
+        <path d="M50,20 L53,32 L66,35 L56,44 L59,57 L50,50 L41,57 L44,44 L34,35 L47,32Z" fill="none" stroke="#0e0d0b" stroke-width=".4"/>
+        <line x1="0" y1="50" x2="20" y2="50" stroke="#0e0d0b" stroke-width=".3"/>
+        <line x1="80" y1="50" x2="100" y2="50" stroke="#0e0d0b" stroke-width=".3"/>
+        <line x1="50" y1="0" x2="50" y2="20" stroke="#0e0d0b" stroke-width=".3"/>
+        <line x1="50" y1="80" x2="50" y2="100" stroke="#0e0d0b" stroke-width=".3"/>
+      </pattern></defs>
+      <rect width="100%" height="100%" fill="url(#bt)"/>
+    </svg>
+  </div>
+  <div class="h-center">
+    <div class="h-eyebrow"><span class="ey-l"></span>SS2026 Collection — Available Now<span class="ey-l"></span></div>
+    <div style="position:relative"><div class="h-logo-o">WINDY</div><h1 class="h-logo">WINDY</h1></div>
+    <p class="h-tag">Move With The Flow</p>
+    <p class="h-sub">Sri Lankan-born. Globally worn.</p>
+    <div class="h-cta">
+      <a href="#featured" class="btn-ink">Shop The Drop</a>
+      <a href="#about" class="btn-out">Our Story</a>
+    </div>
+    <div class="h-orn"><span class="o-dot"></span><span class="o-line"></span><span class="o-dia"></span><span class="o-line"></span><span class="o-dot"></span></div>
+  </div>
+  <div class="h-bot"><span>© 2026 Windy</span><span>All pieces hand-finished</span></div>
+</section>
+
+<div class="tape"><div class="tape-tr">
+  <span class="ti">WINDY SS2026 <span class="dia"></span></span><span class="ti">Move With The Flow <span class="dia"></span></span>
+  <span class="ti">Sri Lanka × Street <span class="dia"></span></span><span class="ti">Limited Drops Only <span class="dia"></span></span>
+  <span class="ti">Handcrafted Premium <span class="dia"></span></span><span class="ti">WINDY SS2026 <span class="dia"></span></span>
+  <span class="ti">Move With The Flow <span class="dia"></span></span><span class="ti">Sri Lanka × Street <span class="dia"></span></span>
+  <span class="ti">Limited Drops Only <span class="dia"></span></span><span class="ti">Handcrafted Premium <span class="dia"></span></span>
+</div></div>
+
+<div class="kd"><svg viewBox="0 0 900 80" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="kp" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse"><circle cx="40" cy="40" r="18" fill="none" stroke="#0e0d0b" stroke-width=".8"/><circle cx="40" cy="40" r="10" fill="none" stroke="#0e0d0b" stroke-width=".5"/><circle cx="40" cy="40" r="3" fill="#0e0d0b"/><path d="M40,22 L44,34 L57,37 L47,46 L50,59 L40,52 L30,59 L33,46 L23,37 L36,34Z" fill="none" stroke="#0e0d0b" stroke-width=".6"/><line x1="0" y1="40" x2="22" y2="40" stroke="#0e0d0b" stroke-width=".4"/><line x1="58" y1="40" x2="80" y2="40" stroke="#0e0d0b" stroke-width=".4"/><line x1="40" y1="0" x2="40" y2="22" stroke="#0e0d0b" stroke-width=".4"/><line x1="40" y1="58" x2="40" y2="80" stroke="#0e0d0b" stroke-width=".4"/><circle cx="0" cy="0" r="2" fill="#0e0d0b"/><circle cx="80" cy="0" r="2" fill="#0e0d0b"/><circle cx="0" cy="80" r="2" fill="#0e0d0b"/><circle cx="80" cy="80" r="2" fill="#0e0d0b"/></pattern></defs><rect width="900" height="80" fill="url(#kp)"/></svg></div>
+
+<!-- FEATURED -->
+<section id="featured">
+  <div class="fi">
+    <div class="reveal" style="margin-bottom:46px"><div class="s-lbl">Featured Drops</div><h2 class="s-ttl">This Season's<br><em>Heat</em></h2></div>
+    <div class="pg">
+
+      <div class="pc reveal">
+        <div class="piw"><span class="lbad">Limited Drop</span><span class="nbad">New</span>
+          <img src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=600&q=80&fit=crop" alt="Void Tee Ivory WINDY"></div>
+        <div class="pin">
+          <h3>Void Tee — Ivory</h3><div class="pcat">Essentials / SS2026</div>
+          <div class="pprice">LKR 8,900 <s>LKR 12,000</s></div>
+          <div class="sw"><div class="si"><span>Stock</span><strong>Only 4 left</strong></div><div class="st"><div class="sb" style="width:15%"></div></div></div>
+          <div class="szs"><button class="sz">XS</button><button class="sz on">S</button><button class="sz">M</button><button class="sz">L</button><button class="sz">XL</button></div>
+          <button class="abtn" onclick="addCart({name:'Void Tee — Ivory',price:8900,emoji:'👕',size:getSz(this)})">Add to Cart</button>
+        </div>
+      </div>
+
+      <div class="pc reveal">
+        <div class="piw"><span class="lbad">Heritage Drop</span><span class="lobad">Low Stock</span>
+          <img src="https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=600&q=80&fit=crop" alt="Phantom Hoodie WINDY"></div>
+        <div class="pin">
+          <h3>Phantom Hoodie</h3><div class="pcat">Heavy / SS2026</div>
+          <div class="pprice">LKR 14,900 <s>LKR 20,000</s></div>
+          <div class="sw"><div class="si"><span>Stock</span><strong>Only 7 left</strong></div><div class="st"><div class="sb" style="width:28%"></div></div></div>
+          <div class="szs"><button class="sz">XS</button><button class="sz">S</button><button class="sz on">M</button><button class="sz">L</button><button class="sz">XL</button></div>
+          <button class="abtn" onclick="addCart({name:'Phantom Hoodie',price:14900,emoji:'🧥',size:getSz(this)})">Add to Cart</button>
+        </div>
+      </div>
+
+      <div class="pc reveal">
+        <div class="piw"><span class="lbad">2 Remaining</span>
+          <img src="https://images.unsplash.com/photo-1594938298603-c8148c4b5696?w=600&q=80&fit=crop" alt="Kolam Cargo WINDY"></div>
+        <div class="pin">
+          <h3>Kolam Cargo</h3><div class="pcat">Bottoms / SS2026</div>
+          <div class="pprice">LKR 12,500</div>
+          <div class="sw"><div class="si"><span>Stock</span><strong>Only 2 left</strong></div><div class="st"><div class="sb" style="width:8%"></div></div></div>
+          <div class="szs"><button class="sz">28</button><button class="sz on">30</button><button class="sz">32</button><button class="sz">34</button></div>
+          <button class="abtn" onclick="addCart({name:'Kolam Cargo',price:12500,emoji:'👖',size:getSz(this)})">Add to Cart</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- COUNTDOWN -->
+<div class="dsec">
+  <div class="dorn"><div class="vl"></div><svg width="18" height="18" viewBox="0 0 18 18"><path d="M9,0 L18,9 L9,18 L0,9Z" fill="none" stroke="rgba(245,240,232,.3)" stroke-width="1"/><circle cx="9" cy="9" r="2" fill="rgba(245,240,232,.4)"/></svg><div class="vl"></div></div>
+  <div><div class="dey">⬡ Next Drop</div><div class="dtt">"Monsoon Collection"</div></div>
+  <div class="cdu">
+    <div class="cdu-u"><div class="cdu-n" id="cdd">02</div><div class="cdu-l">Days</div></div>
+    <div class="cdu-s">:</div>
+    <div class="cdu-u"><div class="cdu-n" id="cdh">14</div><div class="cdu-l">Hours</div></div>
+    <div class="cdu-s">:</div>
+    <div class="cdu-u"><div class="cdu-n" id="cdm">32</div><div class="cdu-l">Mins</div></div>
+    <div class="cdu-s">:</div>
+    <div class="cdu-u"><div class="cdu-n" id="cds">07</div><div class="cdu-l">Secs</div></div>
+  </div>
+  <div class="dorn"><div class="vl"></div><svg width="18" height="18" viewBox="0 0 18 18"><path d="M9,0 L18,9 L9,18 L0,9Z" fill="none" stroke="rgba(245,240,232,.3)" stroke-width="1"/><circle cx="9" cy="9" r="2" fill="rgba(245,240,232,.4)"/></svg><div class="vl"></div></div>
+</div>
+
+<div class="tape"><div class="tape-tr rev">
+  <span class="ti">Free Shipping Island-wide <span class="dia"></span></span><span class="ti">Sustainable Fabric <span class="dia"></span></span>
+  <span class="ti">Locally Made <span class="dia"></span></span><span class="ti">Members Early Access <span class="dia"></span></span>
+  <span class="ti">Free Shipping Island-wide <span class="dia"></span></span><span class="ti">Sustainable Fabric <span class="dia"></span></span>
+  <span class="ti">Locally Made <span class="dia"></span></span><span class="ti">Members Early Access <span class="dia"></span></span>
+</div></div>
+
+<!-- LOOKS -->
+<section id="looks">
+  <div class="li">
+    <div class="reveal" style="margin-bottom:46px"><div class="s-lbl">Wearing Windy</div><h2 class="s-ttl">The Look<br><em>In Motion</em></h2></div>
+    <div class="lg">
+      <div class="look tall reveal">
+        <img src="https://images.unsplash.com/photo-1483721310020-03333e577078?w=700&q=80&fit=crop&crop=top" alt="Model WINDY oversized tee street style">
+        <div class="look-ov"><div class="lc"><h4>Void Tee — Ivory</h4><p>SS2026 · Oversized Fit</p></div></div>
+      </div>
+      <div class="look reveal">
+        <img src="https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?w=600&q=80&fit=crop&crop=top" alt="Model WINDY hoodie editorial">
+        <div class="look-ov"><div class="lc"><h4>Phantom Hoodie</h4><p>SS2026 · Heritage Drop</p></div></div>
+      </div>
+      <div class="look reveal">
+        <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80&fit=crop&crop=top" alt="WINDY full look editorial">
+        <div class="look-ov"><div class="lc"><h4>The Full Look</h4><p>SS2026 · Mix &amp; Match</p></div></div>
+      </div>
+      <div class="look reveal">
+        <img src="https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=600&q=80&fit=crop&crop=top" alt="WINDY streetwear close-up">
+        <div class="look-ov"><div class="lc"><h4>Kolam Cargo</h4><p>SS2026 · Streetwear Bottoms</p></div></div>
+      </div>
+      <div class="look reveal">
+        <img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&q=80&fit=crop&crop=top" alt="WINDY fabric detail premium cotton">
+        <div class="look-ov"><div class="lc"><h4>Fabric Detail</h4><p>Premium cotton · Hand-finished</p></div></div>
+      </div>
+    </div>
+    <div class="reveal" style="text-align:center;margin-top:38px">
+      <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;color:var(--mid);margin-bottom:18px">Tag us @windy.lk — be featured in our next lookbook</p>
+      <a href="#featured" class="btn-out">Shop The Collection</a>
+    </div>
+  </div>
+</section>
+
+<div class="kd"><svg viewBox="0 0 900 80" xmlns="http://www.w3.org/2000/svg"><rect width="900" height="80" fill="url(#kp)"/></svg></div>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="ag">
+    <div class="av reveal">
+      <div class="av-let">W</div><div class="av-s1"></div><div class="av-s2"></div>
+      <svg width="190" height="190" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:1;opacity:.62">
+        <circle cx="100" cy="100" r="80" fill="none" stroke="#0e0d0b" stroke-width=".6"/>
+        <circle cx="100" cy="100" r="62" fill="none" stroke="#0e0d0b" stroke-width=".4"/>
+        <circle cx="100" cy="100" r="44" fill="none" stroke="#0e0d0b" stroke-width=".4"/>
+        <circle cx="100" cy="100" r="22" fill="none" stroke="#0e0d0b" stroke-width=".6"/>
+        <circle cx="100" cy="100" r="6" fill="#0e0d0b"/>
+        <path d="M100,18 L106,62 L148,57 L112,80 L136,122 L100,96 L64,122 L88,80 L52,57 L94,62Z" fill="none" stroke="#0e0d0b" stroke-width=".8"/>
+        <path d="M100,44 Q112,66 100,76 Q88,66 100,44Z" fill="rgba(14,13,11,.07)" stroke="#0e0d0b" stroke-width=".5"/>
+        <path d="M156,100 Q134,112 122,100 Q134,88 156,100Z" fill="rgba(14,13,11,.07)" stroke="#0e0d0b" stroke-width=".5"/>
+        <path d="M100,156 Q88,134 100,122 Q112,134 100,156Z" fill="rgba(14,13,11,.07)" stroke="#0e0d0b" stroke-width=".5"/>
+        <path d="M44,100 Q66,88 78,100 Q66,112 44,100Z" fill="rgba(14,13,11,.07)" stroke="#0e0d0b" stroke-width=".5"/>
+        <circle cx="100" cy="20" r="3" fill="#0e0d0b"/><circle cx="100" cy="180" r="3" fill="#0e0d0b"/>
+        <circle cx="20" cy="100" r="3" fill="#0e0d0b"/><circle cx="180" cy="100" r="3" fill="#0e0d0b"/>
+      </svg>
+      <div class="av-lbl">WINDY Heritage Design</div><div class="av-yr">Est. 2026</div>
+    </div>
+    <div class="at reveal">
+      <div class="s-lbl">Our Story</div>
+      <h2 class="s-ttl" style="margin-bottom:26px">Born From<br>The <em>Island</em></h2>
+      <p>WINDY was born on the streets of <strong>Kurunegala</strong> — where the monsoon winds carry stories, where temples meet traffic, where ancient pattern meets modern pace.</p>
+      <p>We take Sri Lanka's visual heritage — the <strong>kolam patterns, the batik weave, the hand-block prints</strong> — and thread them into streetwear that moves with you, not against you.</p>
+      <p>Every piece is <strong>limited, intentional, and rooted.</strong> This isn't fashion. This is a conversation between the old island and the new generation.</p>
+      <div class="as">
+        <div class="astat"><div class="astat-n">12K+</div><div class="astat-l">Community</div></div>
+        <div class="astat"><div class="astat-n">48</div><div class="astat-l">Drops</div></div>
+        <div class="astat"><div class="astat-n">100%</div><div class="astat-l">Sold Out</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="hs">
+  <div class="hb"><div class="hn">LKA</div><div class="hl">Origin</div><div class="hdc">Roots in Sri Lanka, worn across the globe.</div></div>
+  <div class="hd"></div>
+  <div class="hb"><div class="hn">48</div><div class="hl">Limited Drops</div><div class="hdc">Every release sells out. No restocks. Ever.</div></div>
+  <div class="hd"></div>
+  <div class="hb"><div class="hn">∞</div><div class="hl">The Movement</div><div class="hdc">Culture that flows like wind. Unstoppable.</div></div>
+</div>
+
+<div class="kd"><svg viewBox="0 0 900 80" xmlns="http://www.w3.org/2000/svg"><rect width="900" height="80" fill="url(#kp)"/></svg></div>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="s-lbl">Contact</div>
+  <h2 class="s-ttl">Get In <em>Touch</em></h2>
+  <div class="cg reveal">
+    <div>
+      <p style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--mid);line-height:1.9;font-weight:300;font-style:italic;margin-bottom:28px">Questions, collaborations, press, or wholesale — we reply within 24 hours.</p>
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <div><div style="font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:3px">Email</div><div style="font-size:13px">hello@windy.lk</div></div>
+        <div><div style="font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:3px">Phone</div><div style="font-size:13px">+94 77 123 4567</div></div>
+        <div><div style="font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:3px">Instagram</div><div style="font-size:13px">@windy.lk</div></div>
+        <div><div style="font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:3px">Location</div><div style="font-size:13px">Colombo 03, Sri Lanka</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="cf">
+        <div class="fr2"><input class="ff" type="text" placeholder="Your Name"><input class="ff" type="email" placeholder="Email" style="border-left:1px solid var(--brd)"></div>
+        <input class="ff" type="text" placeholder="Subject" style="width:100%;border-top:1px solid var(--brd)">
+        <textarea class="ff" placeholder="Message" style="border-top:1px solid var(--brd)"></textarea>
+        <button class="ff btn-ink" style="border:none;text-align:center;cursor:pointer;font-size:10px;letter-spacing:3px" onclick="sendMsg(this)">Send Message</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div>
+    <span class="fl">WINDY</span>
+    <p class="ft">"We design for those who move differently. Sri Lankan-born, globally worn."</p>
+    <div class="sr" style="margin-top:26px">
+      <a class="sc" href="#">𝕏</a><a class="sc" href="#">IG</a><a class="sc" href="#">TK</a><a class="sc" href="#">YT</a>
+    </div>
+  </div>
+  <div class="fc"><h5>Shop</h5><a href="#">New Arrivals</a><a href="#">Tops</a><a href="#">Bottoms</a><a href="#">Outerwear</a><a href="#">Accessories</a></div>
+  <div class="fc"><h5>Company</h5><a href="#">About</a><a href="#">Careers</a><a href="#">Press</a><a href="#">Sustainability</a></div>
+  <div class="fc"><h5>Support</h5><a href="#">Shipping</a><a href="#">Returns</a><a href="#">Size Guide</a><a href="#">FAQ</a></div>
+</footer>
+<div class="fb"><span>© 2026 WINDY. All rights reserved.</span><span>Made on the island. Worn everywhere.</span></div>
+
+<div id="toast"></div>
+
+<script>
+// ============================================
+// GOOGLE SHEETS CONFIGURATION
+// REPLACE THIS URL WITH YOUR DEPLOYED APPS SCRIPT URL
+// ============================================
+const SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbzBpFup2YczGtbFK_8qjUbbQ_YCQ6WjexXa1kV3pxtdvVcLWmrZHq4KU6eyzl3p3fB_/exec';
+
+// CURSOR
+const cur=document.getElementById('cur'),curR=document.getElementById('cur-r');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+(function L(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;curR.style.left=rx+'px';curR.style.top=ry+'px';requestAnimationFrame(L);})();
+
+// CART STATE
+let cart=[];
+function getSz(btn){const s=btn.closest('.pin').querySelectorAll('.sz.on');return s.length?s[0].textContent:'M';}
+function addCart(item){
+  const ex=cart.find(i=>i.name===item.name&&i.size===item.size);
+  if(ex)ex.qty++;else cart.push({...item,qty:1,id:Date.now()});
+  refreshCart();openCart();toast('✓ Added — '+item.name);
+}
+function refreshCart(){
+  const tot=cart.reduce((s,i)=>s+i.qty,0);
+  document.getElementById('ncc').textContent=tot;
+  document.getElementById('drawerCount').textContent=tot+' item'+(tot!==1?'s':'');
+  const dot=document.getElementById('ndot');dot.textContent=tot;dot.classList.toggle('show',tot>0);
+  const list=document.getElementById('cList'),empty=document.getElementById('cEmpty'),sum=document.getElementById('cSum');
+  list.querySelectorAll('.c-item').forEach(e=>e.remove());
+  if(!cart.length){empty.style.display='flex';sum.style.display='none';return;}
+  empty.style.display='none';sum.style.display='block';
+  cart.forEach(item=>{
+    const el=document.createElement('div');el.className='c-item';el.dataset.id=item.id;
+    el.innerHTML=`<div class="c-item-img">${item.emoji}</div>
+    <div><div class="ci-n">${item.name}</div><div class="ci-m">Size: ${item.size}</div>
+    <div class="ci-qty"><button onclick="chgQ(${item.id},-1)">−</button><span>${item.qty}</span><button onclick="chgQ(${item.id},1)">+</button></div>
+    <button class="ci-rm" onclick="rmItem(${item.id})">Remove</button></div>
+    <div class="ci-price">LKR ${(item.price*item.qty).toLocaleString()}</div>`;
+    list.appendChild(el);
+  });
+  const sub=cart.reduce((s,i)=>s+i.price*i.qty,0);
+  document.getElementById('sSub').textContent='LKR '+sub.toLocaleString();
+  document.getElementById('sTot').textContent='LKR '+sub.toLocaleString();
+  refreshCoUI();
+}
+function chgQ(id,d){const i=cart.find(x=>x.id===id);if(!i)return;i.qty+=d;if(i.qty<=0)cart=cart.filter(x=>x.id!==id);refreshCart();}
+function rmItem(id){cart=cart.filter(x=>x.id!==id);refreshCart();}
+function refreshCoUI(){
+  const sub=cart.reduce((s,i)=>s+i.price*i.qty,0);
+  document.getElementById('coSub').textContent='LKR '+sub.toLocaleString();
+  document.getElementById('coTot').textContent='LKR '+sub.toLocaleString();
+  document.getElementById('coItems').innerHTML=cart.map(it=>`
+    <div class="co-oi"><div class="co-oi-l"><div class="co-oi-img">${it.emoji}</div>
+    <div class="co-oi-info"><div class="n">${it.name}</div><div class="m">Size ${it.size} · Qty ${it.qty}</div></div></div>
+    <div style="font-size:12px">LKR ${(it.price*it.qty).toLocaleString()}</div></div>`).join('');
+}
+
+// OPEN/CLOSE
+function openCart(){document.getElementById('cart-ov').classList.add('on');document.getElementById('cart-drawer').classList.add('on');document.body.classList.add('noscroll');}
+function closeCart(){document.getElementById('cart-ov').classList.remove('on');document.getElementById('cart-drawer').classList.remove('on');document.body.classList.remove('noscroll');}
+function resetCart(){closeCart();cart=[];refreshCart();setTimeout(()=>goTab('bag'),400);}
+
+// TABS
+function goTab(t){
+  ['p-bag','p-checkout','p-success'].forEach(id=>{const el=document.getElementById(id);el.style.display='none';el.style.flexDirection='';});
+  ['t-bag','t-co','t-ok'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on');});
+  if(t==='bag'){show('p-bag');document.getElementById('t-bag').classList.add('on');}
+  else if(t==='co'){
+    if(!cart.length){toast('Add items first!');return;}
+    refreshCoUI();show('p-checkout');document.getElementById('t-co').classList.add('on');
+  }else if(t==='ok'){
+    show('p-success');
+    const tok=document.getElementById('t-ok');tok.style.display='block';tok.classList.add('on');
+  }
+}
+function show(id){const el=document.getElementById(id);el.style.display='flex';el.style.flexDirection='column';}
+show('p-bag');
+
+// PAYMENT
+let payM='card';
+function setPay(el,m){document.querySelectorAll('.pay-m').forEach(x=>x.classList.remove('on'));el.classList.add('on');payM=m;
+  document.getElementById('pf-card').style.display=m==='card'?'block':'none';
+  document.getElementById('pf-cod').style.display=m==='cod'?'block':'none';
+  document.getElementById('pf-bank').style.display=m==='bank'?'block':'none';
+}
+function fmtCard(el){let v=el.value.replace(/\D/g,'').substring(0,16);el.value=v.replace(/(.{4})/g,'$1  ').trim();}
+function fmtExp(el){let v=el.value.replace(/\D/g,'');if(v.length>=2)v=v.slice(0,2)+' / '+v.slice(2,4);el.value=v;}
+
+// ============================================
+// SAVE ORDER TO GOOGLE SHEETS
+// ============================================
+async function saveOrderToSheets(order) {
+  try {
+    const formData = new URLSearchParams();
+    formData.append('action', 'addOrder');
+    formData.append('order', JSON.stringify({
+      orderId: order.ref,
+      date: order.date,
+      status: order.status,
+      customerName: order.customer.name,
+      phone: order.customer.phone,
+      email: order.customer.email,
+      address: order.customer.address,
+      city: order.customer.city,
+      province: order.customer.province,
+      items: order.items.map(i => `${i.name} (${i.size}) x${i.qty}`).join(', '),
+      subtotal: order.subtotal,
+      delivery: order.delivery,
+      total: order.total,
+      paymentMethod: order.payment
+    }));
+    
+    const response = await fetch(SHEETS_API_URL, {
+      method: 'POST',
+      body: formData
+    });
+    
+    const result = await response.json();
+    return result.success;
+  } catch (error) {
+    console.error('Error saving to Google Sheets:', error);
+    return false;
+  }
+}
+
+// ============================================
+// PLACE ORDER - SAVES TO GOOGLE SHEETS
+// ============================================
+async function placeOrder() {
+  // Validation
+  if (!document.getElementById('fn').value.trim() || 
+      !document.getElementById('ph').value.trim() || 
+      !document.getElementById('a1').value.trim() || 
+      !document.getElementById('cy').value.trim()) {
+    toast('Please fill in delivery details');
+    return;
+  }
+  
+  if (payM === 'card' && document.getElementById('cnum').value.replace(/\s/g, '').length < 16) {
+    toast('Enter a valid card number');
+    return;
+  }
+
+  if (cart.length === 0) {
+    toast('Your cart is empty');
+    return;
+  }
+  
+  const btn = document.getElementById('placeBtn');
+  btn.textContent = 'Processing...';
+  btn.classList.add('loading');
+  
+  // Calculate totals
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const delivery = 350;
+  const total = subtotal + delivery;
+  
+  // Create order object
+  const order = {
+    ref: 'WDY-' + Math.floor(10000 + Math.random() * 90000),
+    date: new Date().toISOString(),
+    status: 'Pending',
+    customer: {
+      name: document.getElementById('fn').value.trim() + ' ' + document.getElementById('ln').value.trim(),
+      phone: document.getElementById('ph').value.trim(),
+      email: document.getElementById('em').value.trim(),
+      address: document.getElementById('a1').value.trim(),
+      city: document.getElementById('cy').value.trim(),
+      province: document.getElementById('prov').value || '',
+      note: document.getElementById('notes')?.value || ''
+    },
+    items: cart.map(item => ({
+      name: item.name,
+      price: item.price,
+      qty: item.qty,
+      size: item.size,
+      icon: item.emoji
+    })),
+    subtotal: subtotal,
+    delivery: delivery,
+    total: total,
+    payment: payM
+  };
+  
+  // Save to Google Sheets
+  const saved = await saveOrderToSheets(order);
+  
+  if (saved) {
+    // Also save to localStorage as backup
+    let orders = JSON.parse(localStorage.getItem('windy_orders') || '[]');
+    orders.unshift(order);
+    localStorage.setItem('windy_orders', JSON.stringify(orders));
+    
+    // Clear cart
+    cart = [];
+    refreshCart();
+    
+    // Show success
+    document.getElementById('ordNum').textContent = 'Order #' + order.ref;
+    goTab('ok');
+    toast('Order placed! Check your Google Sheet.');
+  } else {
+    toast('Error placing order. Please try again.');
+  }
+  
+  btn.textContent = 'Place Order';
+  btn.classList.remove('loading');
+}
+
+// SIZES
+document.querySelectorAll('.szs').forEach(g=>g.querySelectorAll('.sz').forEach(b=>b.addEventListener('click',function(){g.querySelectorAll('.sz').forEach(x=>x.classList.remove('on'));this.classList.add('on');})));
+
+// COUNTDOWN
+const tgt=new Date(Date.now()+2*864e5+14*36e5+32*6e4+7e3);
+function tick(){const d=tgt-Date.now();const dd=Math.floor(d/864e5),hh=Math.floor((d%864e5)/36e5),mm=Math.floor((d%36e5)/6e4),ss=Math.floor((d%6e4)/1e3);
+  document.getElementById('cdd').textContent=String(dd).padStart(2,'0');document.getElementById('cdh').textContent=String(hh).padStart(2,'0');
+  document.getElementById('cdm').textContent=String(mm).padStart(2,'0');document.getElementById('cds').textContent=String(ss).padStart(2,'0');}
+setInterval(tick,1000);tick();
+
+// REVEAL
+const obs=new IntersectionObserver(es=>es.forEach((e,i)=>{if(e.isIntersecting){setTimeout(()=>e.target.classList.add('vis'),i*65);obs.unobserve(e.target);}}),{threshold:.08});
+document.querySelectorAll('.reveal').forEach(r=>obs.observe(r));
+
+// TOAST
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+// CONTACT
+function sendMsg(btn){const o=btn.textContent;btn.textContent='Sending...';setTimeout(()=>{btn.textContent='Sent ✓';toast('Message sent!');},900);setTimeout(()=>btn.textContent=o,3000);}
+
+// PARALLAX
+window.addEventListener('scroll',()=>{const y=window.scrollY,l=document.querySelector('.h-logo');if(l)l.style.transform='translateY('+y*.25+'px)';});
+</script>
+</body>
+</html>
