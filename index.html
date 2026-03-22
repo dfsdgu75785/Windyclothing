@@ -817,12 +817,23 @@ footer{border-top:1px solid var(--brd);display:grid;grid-template-columns:2fr 1f
       </div>
     </div>
     <div>
-      <div class="cf">
-        <div class="fr2"><input class="ff" type="text" placeholder="Your Name"><input class="ff" type="email" placeholder="Email" style="border-left:1px solid var(--brd)"></div>
-        <input class="ff" type="text" placeholder="Subject" style="width:100%;border-top:1px solid var(--brd)">
-        <textarea class="ff" placeholder="Message" style="border-top:1px solid var(--brd)"></textarea>
-        <button class="ff btn-ink" style="border:none;text-align:center;cursor:pointer;font-size:10px;letter-spacing:3px" onclick="sendMsg(this)">Send Message</button>
-      </div>
+      <form action="https://formsubmit.co/windyclothinglk@gmail.com" method="POST" style="display: flex; flex-direction: column; gap: 1px; background: var(--brd); border: 1px solid var(--brd);">
+        <div class="fr2">
+          <input type="text" name="name" placeholder="Your Name" required class="ff" style="background: var(--ww); border: none; padding: 17px 19px;">
+          <input type="email" name="email" placeholder="Email" required class="ff" style="background: var(--ww); border: none; border-left: 1px solid var(--brd); padding: 17px 19px;">
+        </div>
+        <input type="text" name="subject" placeholder="Subject" required class="ff" style="background: var(--ww); border: none; border-top: 1px solid var(--brd); width: 100%; padding: 17px 19px;">
+        <textarea name="message" placeholder="Message" required class="ff" style="background: var(--ww); border: none; border-top: 1px solid var(--brd); height: 120px; padding: 17px 19px;"></textarea>
+        
+        <!-- FormSubmit.co configuration -->
+        <input type="hidden" name="_captcha" value="false">
+        <input type="hidden" name="_template" value="table">
+        <input type="hidden" name="_subject" value="New WINDY Contact Message">
+        <input type="hidden" name="_next" value="https://your-site.netlify.app/thanks.html">
+        
+        <button type="submit" class="ff btn-ink" style="border: none; text-align: center; cursor: pointer; font-size: 10px; letter-spacing: 3px; padding: 17px 19px;">Send Message →</button>
+      </form>
+      <p style="margin-top: 12px; text-align: center; font-size: 9px; color: var(--dim);">We'll reply within 24 hours</p>
     </div>
   </div>
 </section>
