@@ -1,10 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WINDY — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+:root{
+  --warm:#faf8f3;--off:#ede9df;--cream:#f5f0e8;
+  --ink:#0e0d0b;--char:#1a1916;--mid:#6b6760;--dim:#9a9690;
+  --border:rgba(14,13,11,.11);--borderh:rgba(14,13,11,.22);
+  --accent:#c8a96e;--red:#8b1a1a;--green:#2d6a4f;--blue:#1a3a5c;
+  --sidebar:220px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--off);color:var(--ink);font-family:'DM Mono',monospace;min-height:100vh;display:flex;flex-direction:column;}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:var(--warm);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:0;}
+.login-box{width:360px;border:1px solid var(--border);background:var(--warm);}
+.login-header{background:var(--ink);color:var(--cream);padding:28px;text-align:center;}
+.login-logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:8px;}
+.login-sub{font-size:9px;letter-spacing:3px;color:rgba(245,240,232,.5);text-transform:uppercase;margin-top:4px;}
+.login-body{padding:28px;display:flex;flex-direction:column;gap:14px;}
+.l-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--mid);margin-bottom:4px;}
+.l-input{width:100%;background:var(--off);border:1px solid var(--border);padding:12px 14px;font-family:'DM Mono',monospace;font-size:12px;color:var(--ink);outline:none;}
+.l-input:focus{border-color:var(--ink);}
+.login-btn{width:100%;padding:14px;background:var(--ink);color:var(--cream);border:none;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;margin-top:4px;}
+.login-btn:hover{background:var(--accent);}
+.login-err{font-size:10px;color:var(--red);display:none;text-align:center;}
+.login-hint{font-size:9px;color:var(--dim);text-align:center;letter-spacing:1px;padding:0 28px 20px;}
+
+/* APP */
+#app{display:none;flex:1;}
+.app-inner{display:flex;min-height:100vh;}
+
+/* SIDEBAR */
+aside{width:var(--sidebar);background:var(--ink);color:var(--cream);position:fixed;top:0;bottom:0;left:0;z-index:100;}
+.sidebar-logo{padding:28px 24px 20px;border-bottom:1px solid rgba(245,240,232,.08);}
+.s-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:6px;color:var(--cream);}
+.s-sub{font-size:8px;letter-spacing:3px;color:rgba(245,240,232,.35);text-transform:uppercase;margin-top:2px;}
+.sidebar-nav{padding:20px 0;flex:1;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:12px 24px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(245,240,232,.5);cursor:pointer;transition:all .2s;border-left:2px solid transparent;}
+.nav-item:hover{color:var(--cream);background:rgba(245,240,232,.04);}
+.nav-item.active{color:var(--cream);border-left-color:var(--accent);background:rgba(245,240,232,.06);}
+.nav-item .icon{font-size:14px;width:18px;text-align:center;}
+.sidebar-footer{padding:20px 24px;border-top:1px solid rgba(245,240,232,.08);font-size:9px;color:rgba(245,240,232,.3);letter-spacing:1px;}
+
+/* MAIN */
+main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;}
+.topbar{background:var(--warm);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.topbar-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;}
+.topbar-right{display:flex;align-items:center;gap:16px;}
+.refresh-btn{background:none;border:1px solid var(--border);color:var(--mid);padding:7px 16px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;}
+.refresh-btn:hover{border-color:var(--ink);color:var(--ink);}
+.logout-btn{background:var(--ink);color:var(--cream);border:none;padding:7px 16px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;}
+.logout-btn:hover{background:var(--red);}
+
+/* PAGES */
+.page{display:none;padding:32px;flex:1;}
+.page.active{display:block;}
+
+/* STAT CARDS */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:32px;}
+.stat-card{background:var(--warm);padding:24px;}
+.sc-label{font-size:8px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;}
+.sc-val{font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:2px;line-height:1;}
+.sc-sub{font-size:9px;color:var(--dim);margin-top:4px;}
+.sc-accent{color:var(--accent);}
+.sc-red{color:var(--red);}
+.sc-green{color:var(--green);}
+
+/* FILTERS */
+.filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.filter-btn{padding:7px 16px;background:none;border:1px solid var(--border);color:var(--mid);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;}
+.filter-btn:hover,.filter-btn.on{background:var(--ink);color:var(--cream);border-color:var(--ink);}
+.search-box{flex:1;max-width:280px;background:var(--warm);border:1px solid var(--border);padding:7px 14px;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink);outline:none;}
+
+/* TABLE */
+.table-wrap{background:var(--warm);border:1px solid var(--border);overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead{background:var(--off);}
+th{padding:12px 16px;text-align:left;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--mid);font-weight:400;border-bottom:1px solid var(--border);}
+td{padding:14px 16px;font-size:11px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--off);}
+.status-pill{display:inline-block;padding:4px 12px;font-size:8px;letter-spacing:2px;text-transform:uppercase;}
+.s-pending{background:rgba(200,169,110,.15);color:#8a6d00;border:1px solid rgba(200,169,110,.4);}
+.s-processing{background:rgba(26,58,92,.1);color:var(--blue);border:1px solid rgba(26,58,92,.3);}
+.s-shipped{background:rgba(45,106,79,.12);color:var(--green);border:1px solid rgba(45,106,79,.3);}
+.s-delivered{background:rgba(45,106,79,.2);color:var(--green);border:1px solid rgba(45,106,79,.4);}
+.s-cancelled{background:rgba(139,26,26,.1);color:var(--red);border:1px solid rgba(139,26,26,.3);}
+.pay-badge{font-size:8px;letter-spacing:1px;padding:3px 8px;background:var(--off);border:1px solid var(--border);}
+.action-btns{display:flex;gap:6px;}
+.act-btn{padding:5px 10px;background:none;border:1px solid var(--border);color:var(--mid);font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1px;cursor:pointer;}
+.act-btn:hover{border-color:var(--ink);color:var(--ink);}
+.act-btn.primary{background:var(--ink);color:var(--cream);border-color:var(--ink);}
+.act-btn.primary:hover{background:var(--accent);}
+.act-btn.danger{border-color:rgba(139,26,26,.3);color:var(--red);}
+.act-btn.danger:hover{background:var(--red);color:#fff;}
+.empty-state{text-align:center;padding:60px 20px;}
+.empty-state p{font-family:'Cormorant Garamond',serif;font-size:20px;font-style:italic;color:var(--dim);}
+
+/* MODAL */
+#modal-overlay{position:fixed;inset:0;background:rgba(14,13,11,.5);z-index:800;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#modal-overlay.open{display:flex;}
+.modal{background:var(--warm);width:600px;max-width:95vw;max-height:90vh;overflow-y:auto;border:1px solid var(--border);}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border);background:var(--off);}
+.modal-head h3{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;}
+.modal-close{background:none;border:none;font-size:18px;cursor:pointer;color:var(--mid);}
+.modal-body{padding:24px;}
+.modal-section{margin-bottom:24px;}
+.modal-section-title{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--mid);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.info-item .il{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:3px;}
+.info-item .iv{font-size:12px;line-height:1.5;}
+.order-item-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.order-item-row:last-child{border-bottom:none;}
+.oi-icon{font-size:24px;width:40px;text-align:center;}
+.oi-name{font-size:13px;font-family:'Cormorant Garamond',serif;font-weight:600;}
+.oi-meta{font-size:9px;color:var(--dim);letter-spacing:1px;}
+.oi-price{margin-left:auto;font-family:'DM Mono',monospace;font-size:13px;}
+.total-row{display:flex;justify-content:space-between;padding:8px 0;font-size:12px;}
+.total-row.grand{font-size:15px;font-weight:700;border-top:1px solid var(--borderh);padding-top:12px;margin-top:4px;}
+.status-select{width:100%;background:var(--off);border:1px solid var(--border);padding:10px 14px;font-family:'DM Mono',monospace;font-size:11px;color:var(--ink);outline:none;margin-top:8px;}
+.update-btn{width:100%;padding:12px;background:var(--ink);color:var(--cream);border:none;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;margin-top:10px;}
+.update-btn:hover{background:var(--accent);}
+.seed-banner{background:rgba(200,169,110,.15);border:1px solid rgba(200,169,110,.4);padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.seed-banner p{font-size:10px;letter-spacing:1px;color:#7a5f00;}
+.seed-btn{padding:6px 14px;background:var(--accent);color:#fff;border:none;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;cursor:pointer;}
+#adm-toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:var(--cream);padding:12px 20px;font-size:10px;letter-spacing:2px;text-transform:uppercase;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;border-left:3px solid var(--accent);z-index:9999;}
+#adm-toast.show{opacity:1;transform:translateY(0);}
+
+/* REVENUE PAGE */
+.rev-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px;}
+.rev-card{background:var(--warm);border:1px solid var(--border);padding:24px;}
+.rev-card h4{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--mid);margin-bottom:16px;}
+.chart-bar-wrap{display:flex;flex-direction:column;gap:8px;}
+.chart-row{display:flex;align-items:center;gap:12px;}
+.chart-label{font-size:9px;width:60px;text-align:right;color:var(--mid);letter-spacing:1px;flex-shrink:0;}
+.chart-track{flex:1;height:18px;background:var(--off);position:relative;}
+.chart-fill{height:100%;background:var(--ink);transition:width .6s cubic-bezier(.16,1,.3,1);}
+.chart-fill.accent{background:var(--accent);}
+.chart-num{font-size:9px;width:80px;text-align:right;color:var(--mid);letter-spacing:1px;flex-shrink:0;}
+.top-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.top-item:last-child{border-bottom:none;}
+.top-rank{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--dim);width:28px;}
+.top-name{flex:1;font-size:12px;}
+.top-val{font-family:'DM Mono',monospace;font-size:12px;color:var(--mid);}
+
+/* SETTINGS PAGE */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.setting-card{background:var(--warm);border:1px solid var(--border);padding:24px;}
+.setting-card h4{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+.s-field-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--mid);margin-bottom:5px;margin-top:12px;}
+.s-field{width:100%;background:var(--off);border:1px solid var(--border);padding:10px 14px;font-family:'DM Mono',monospace;font-size:12px;color:var(--ink);outline:none;}
+.s-btn{padding:10px 20px;background:var(--ink);color:var(--cream);border:none;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-top:16px;transition:background .2s;}
+.s-btn:hover{background:var(--accent);}
+.s-btn.danger{background:var(--red);}
+.s-btn.danger:hover{background:#6b1414;}
+
+@media(max-width:900px){
+  :root{--sidebar:0px;}
+  aside{display:none;}
+  main{margin-left:0;}
+  .stat-row{grid-template-columns:1fr 1fr;}
+  .rev-grid{grid-template-columns:1fr;}
+  .settings-grid{grid-template-columns:1fr;}
+  .info-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-header">
+      <div class="login-logo">WINDY</div>
+      <div class="login-sub">Admin Panel</div>
+    </div>
+    <div class="login-body">
+      <div>
+        <div class="l-label">Username</div>
+        <input class="l-input" id="l-user" type="text" placeholder="admin" autocomplete="off">
+      </div>
+      <div>
+        <div class="l-label">Password</div>
+        <input class="l-input" id="l-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <p class="login-err" id="l-err">Invalid credentials. Try again.</p>
+      <button class="login-btn" onclick="doLogin()">Sign In →</button>
+    </div>
+    <p class="login-hint">Default: admin / windy2026</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="app-inner">
+    <aside>
+      <div class="sidebar-logo">
+        <div class="s-logo">WINDY</div>
+        <div class="s-sub">Admin Panel</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-item active" onclick="showPage('orders',this)"><span class="icon">📦</span> Orders</div>
+        <div class="nav-item" onclick="showPage('revenue',this)"><span class="icon">📊</span> Revenue</div>
+        <div class="nav-item" onclick="showPage('customers',this)"><span class="icon">👥</span> Customers</div>
+        <div class="nav-item" onclick="showPage('settings',this)"><span class="icon">⚙️</span> Settings</div>
+      </nav>
+      <div class="sidebar-footer">
+        <div>Logged in as Admin</div>
+        <div style="margin-top:4px;color:rgba(245,240,232,.15)" id="sb-time"></div>
+      </div>
+    </aside>
+
+    <main>
+      <div class="topbar">
+        <div class="topbar-title" id="page-title">Orders</div>
+        <div class="topbar-right">
+          <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+          <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+        </div>
+      </div>
+
+      <!-- ORDERS PAGE -->
+      <div class="page active" id="page-orders">
+        <div class="stat-row" id="order-stats"></div>
+        <div id="seed-wrap"></div>
+        <div class="filter-bar">
+          <input class="search-box" id="search-box" placeholder="Search name, ref, phone…" oninput="filterOrders()">
+          <button class="filter-btn on" onclick="setFilter('all',this)">All</button>
+          <button class="filter-btn" onclick="setFilter('Pending',this)">Pending</button>
+          <button class="filter-btn" onclick="setFilter('Processing',this)">Processing</button>
+          <button class="filter-btn" onclick="setFilter('Shipped',this)">Shipped</button>
+          <button class="filter-btn" onclick="setFilter('Delivered',this)">Delivered</button>
+          <button class="filter-btn" onclick="setFilter('Cancelled',this)">Cancelled</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Order Ref</th><th>Date</th><th>Customer</th><th>Phone</th><th>City</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="orders-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- REVENUE PAGE -->
+      <div class="page" id="page-revenue">
+        <div class="stat-row" id="rev-stats"></div>
+        <div class="rev-grid">
+          <div class="rev-card"><h4>Revenue by Product</h4><div id="rev-by-product" class="chart-bar-wrap"></div></div>
+          <div class="rev-card"><h4>Revenue by Payment</h4><div id="rev-by-payment" class="chart-bar-wrap"></div></div>
+          <div class="rev-card"><h4>Orders by Status</h4><div id="rev-by-status" class="chart-bar-wrap"></div></div>
+          <div class="rev-card"><h4>Top Customers</h4><div id="top-customers"></div></div>
+        </div>
+      </div>
+
+      <!-- CUSTOMERS PAGE -->
+      <div class="page" id="page-customers">
+        <div class="stat-row" id="cust-stats"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Customer</th><th>Phone</th><th>Email</th><th>City</th><th>Orders</th><th>Total Spend</th><th>Last Order</th></tr></thead>
+            <tbody id="customers-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SETTINGS PAGE -->
+      <div class="page" id="page-settings">
+        <div class="settings-grid">
+          <div class="setting-card">
+            <h4>Change Password</h4>
+            <div class="s-field-label">Current Password</div>
+            <input class="s-field" id="s-cur-pass" type="password">
+            <div class="s-field-label">New Password</div>
+            <input class="s-field" id="s-new-pass" type="password">
+            <div class="s-field-label">Confirm New Password</div>
+            <input class="s-field" id="s-con-pass" type="password">
+            <button class="s-btn" onclick="changePass()">Update Password</button>
+          </div>
+          <div class="setting-card">
+            <h4>Order Data</h4>
+            <p style="font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:var(--mid);margin-bottom:8px;">Export orders or clear local backup</p>
+            <button class="s-btn" onclick="exportOrders()">Export Orders JSON</button>
+            <button class="s-btn danger" onclick="clearLocalBackup()" style="margin-left:8px;">Clear Local Backup</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head"><h3 id="modal-ref">Order Detail</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<div id="adm-toast"></div>
+
 <script>
 // ============================================
 // GOOGLE SHEETS CONFIGURATION
+// REPLACE THIS WITH YOUR ACTUAL GOOGLE APPS SCRIPT URL
 // ============================================
 const SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbzBK0RLGhMVGVkydQM5A4uSlSxg68dovXK4WHCEPyu2wIUXwkTLJixeK_wbixCw7uVk/exec';
 
-// ── AUTH ──
+// ============================================
+// AUTHENTICATION
+// ============================================
 const CREDS_KEY = 'windy_admin_creds';
 function getCreds() { return JSON.parse(localStorage.getItem(CREDS_KEY) || '{"user":"admin","pass":"windy2026"}'); }
 
@@ -41,7 +353,9 @@ function changePass() {
   ['s-cur-pass', 's-new-pass', 's-con-pass'].forEach(id => document.getElementById(id).value = '');
 }
 
-// ── FORMATTING FUNCTIONS ──
+// ============================================
+// FORMATTING FUNCTIONS
+// ============================================
 function fmtPrice(n) { return 'LKR ' + Number(n).toLocaleString(); }
 function fmtDate(iso) {
   const d = new Date(iso);
@@ -53,14 +367,15 @@ const PM_LABELS = { card: '💳 Card', cod: '💵 COD', bank: '🏦 Bank' };
 let filterStatus = 'all';
 let currentOrders = [];
 
-// ── FETCH ORDERS FROM GOOGLE SHEETS ──
+// ============================================
+// GOOGLE SHEETS API CALLS
+// ============================================
 async function fetchOrdersFromSheets() {
   try {
     const response = await fetch(`${SHEETS_API_URL}?action=getOrders`);
     const result = await response.json();
     
     if (result.success && result.orders) {
-      // Convert Google Sheets data to order format
       return result.orders.map(row => ({
         ref: row['Order ID'] || '',
         date: row['Date'] || '',
@@ -89,11 +404,11 @@ async function fetchOrdersFromSheets() {
     return [];
   } catch (error) {
     console.error('Error fetching from Google Sheets:', error);
+    adm_toast('Error connecting to Google Sheets');
     return [];
   }
 }
 
-// ── UPDATE ORDER STATUS IN GOOGLE SHEETS ──
 async function updateStatusInSheets(orderId, newStatus) {
   try {
     const formData = new URLSearchParams();
@@ -114,7 +429,9 @@ async function updateStatusInSheets(orderId, newStatus) {
   }
 }
 
-// ── RENDER ORDERS TABLE ──
+// ============================================
+// RENDER FUNCTIONS
+// ============================================
 function renderOrdersTable(orders) {
   const tb = document.getElementById('orders-tbody');
   if (!orders.length) {
@@ -133,15 +450,11 @@ function renderOrdersTable(orders) {
       <td style="font-family:\'DM Mono\',monospace">${fmtPrice(o.total)}</td>
       <td><span class="pay-badge">${PM_LABELS[o.payment] || o.payment}</span></td>
       <td><span class="status-pill ${statusClass(o.status)}">${o.status}</span></td>
-      <td><div class="action-btns">
-        <button class="act-btn primary" onclick="openModal('${o.ref}')">View</button>
-        <button class="act-btn danger" onclick="cancelOrder('${o.ref}')">✕</button>
-      </div></td>
+      <td><div class="action-btns"><button class="act-btn primary" onclick="openModal('${o.ref}')">View</button><button class="act-btn danger" onclick="cancelOrder('${o.ref}')">✕</button></div></td>
     </tr>
   `).join('');
 }
 
-// ── RENDER STATS ──
 function renderStats(orders) {
   const total = orders.reduce((s, o) => s + (o.total || 0), 0);
   const pending = orders.filter(o => o.status === 'Pending').length;
@@ -155,18 +468,10 @@ function renderStats(orders) {
   
   const sb = document.getElementById('seed-wrap');
   if (!orders.length) {
-    sb.innerHTML = '<div class="seed-banner"><p>No orders found. Place a test order from the store!</p><button class="seed-btn" onclick="seedLocalOrders()">Seed Sample Orders</button></div>';
+    sb.innerHTML = '<div class="seed-banner"><p>No orders found. Place a test order from the store!</p></div>';
   } else {
     sb.innerHTML = '';
   }
-}
-
-// ── FILTER ORDERS ──
-function setFilter(s, btn) {
-  filterStatus = s;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  filterOrders();
 }
 
 function filterOrders() {
@@ -184,17 +489,27 @@ function filterOrders() {
   renderOrdersTable(filtered);
 }
 
-// ── LOAD ALL ORDERS ──
+function setFilter(s, btn) {
+  filterStatus = s;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  filterOrders();
+}
+
 async function loadAll() {
   document.getElementById('orders-tbody').innerHTML = '<tr><td colspan="10"><div class="empty-state"><p>Loading orders from Google Sheets...</p></div></td></tr>';
-  
   const orders = await fetchOrdersFromSheets();
   currentOrders = orders;
   renderStats(orders);
   renderOrdersTable(orders);
+  if (orders.length > 0) {
+    adm_toast(`Loaded ${orders.length} orders from Google Sheets`);
+  }
 }
 
-// ── OPEN ORDER MODAL ──
+// ============================================
+// MODAL FUNCTIONS
+// ============================================
 function openModal(ref) {
   const o = currentOrders.find(x => x.ref === ref);
   if (!o) return;
@@ -235,11 +550,9 @@ function closeModal() {
   document.getElementById('modal-overlay').classList.remove('open');
 }
 
-// ── UPDATE ORDER STATUS ──
 async function updateStatus(ref) {
   const newStatus = document.getElementById('modal-status').value;
   const success = await updateStatusInSheets(ref, newStatus);
-  
   if (success) {
     closeModal();
     await loadAll();
@@ -249,7 +562,6 @@ async function updateStatus(ref) {
   }
 }
 
-// ── CANCEL ORDER ──
 async function cancelOrder(ref) {
   if (!confirm('Cancel order ' + ref + '?')) return;
   const success = await updateStatusInSheets(ref, 'Cancelled');
@@ -261,55 +573,37 @@ async function cancelOrder(ref) {
   }
 }
 
-// ── SEED LOCAL ORDERS (for testing) ──
-function seedLocalOrders() {
-  const sampleOrder = {
-    ref: 'WDY-TEST001',
-    date: new Date().toISOString(),
-    status: 'Pending',
-    customer: {
-      name: 'Test Customer',
-      phone: '+94 77 123 4567',
-      email: 'test@example.com',
-      address: '123 Test St',
-      city: 'Colombo',
-      province: 'Western'
-    },
-    items: [{ name: 'Test Item', size: 'M', qty: 1, price: 1000, icon: '👕' }],
-    subtotal: 1000,
-    delivery: 350,
-    total: 1350,
-    payment: 'card'
-  };
+// ============================================
+// PAGE NAVIGATION
+// ============================================
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (el) el.classList.add('active');
   
-  // Save to localStorage for testing
-  let orders = JSON.parse(localStorage.getItem('windy_orders') || '[]');
-  orders.unshift(sampleOrder);
-  localStorage.setItem('windy_orders', JSON.stringify(orders));
+  const titles = { orders: 'Orders', revenue: 'Revenue', customers: 'Customers', settings: 'Settings' };
+  document.getElementById('page-title').textContent = titles[id] || id;
   
-  loadAll();
-  adm_toast('Test order added to localStorage');
+  if (id === 'revenue') renderRevenue();
+  if (id === 'customers') renderCustomers();
 }
 
-// ── REVENUE PAGE ──
 function renderRevenue() {
   const orders = currentOrders.filter(o => o.status !== 'Cancelled');
   const total = orders.reduce((s, o) => s + o.total, 0);
-  const avg = orders.length ? Math.round(total / orders.length) : 0;
-  
   document.getElementById('rev-stats').innerHTML = `
-    <div class="stat-card"><div class="sc-label">Gross Revenue</div><div class="sc-val sc-accent">${fmtPrice(total)}</div></div>
-    <div class="stat-card"><div class="sc-label">Average Order</div><div class="sc-val">${fmtPrice(avg)}</div></div>
+    <div class="stat-card"><div class="sc-label">Revenue</div><div class="sc-val sc-accent">${fmtPrice(total)}</div></div>
     <div class="stat-card"><div class="sc-label">Orders</div><div class="sc-val">${orders.length}</div></div>
+    <div class="stat-card"><div class="sc-label">Avg Order</div><div class="sc-val">${fmtPrice(orders.length ? Math.round(total/orders.length) : 0)}</div></div>
     <div class="stat-card"><div class="sc-label">Delivery Revenue</div><div class="sc-val">${fmtPrice(orders.length * 350)}</div></div>`;
   
-  document.getElementById('rev-by-product').innerHTML = '<p style="color:var(--dim);font-size:11px">Data from Google Sheets</p>';
-  document.getElementById('rev-by-payment').innerHTML = '<p style="color:var(--dim);font-size:11px">Data from Google Sheets</p>';
-  document.getElementById('rev-by-status').innerHTML = '<p style="color:var(--dim);font-size:11px">Data from Google Sheets</p>';
-  document.getElementById('top-customers').innerHTML = '<p style="color:var(--dim);font-size:11px">Data from Google Sheets</p>';
+  document.getElementById('rev-by-product').innerHTML = '<p style="color:var(--dim);font-size:11px;padding:20px;text-align:center">Data from Google Sheets</p>';
+  document.getElementById('rev-by-payment').innerHTML = '<p style="color:var(--dim);font-size:11px;padding:20px;text-align:center">Data from Google Sheets</p>';
+  document.getElementById('rev-by-status').innerHTML = '<p style="color:var(--dim);font-size:11px;padding:20px;text-align:center">Data from Google Sheets</p>';
+  document.getElementById('top-customers').innerHTML = '<p style="color:var(--dim);font-size:11px;padding:20px;text-align:center">Data from Google Sheets</p>';
 }
 
-// ── CUSTOMERS PAGE ──
 function renderCustomers() {
   document.getElementById('cust-stats').innerHTML = `
     <div class="stat-card"><div class="sc-label">Total Customers</div><div class="sc-val">${currentOrders.length}</div></div>
@@ -342,21 +636,9 @@ function renderCustomers() {
   `).join('');
 }
 
-// ── PAGE NAVIGATION ──
-function showPage(id, el) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  if (el) el.classList.add('active');
-  
-  const titles = { orders: 'Orders', revenue: 'Revenue', customers: 'Customers', settings: 'Settings' };
-  document.getElementById('page-title').textContent = titles[id] || id;
-  
-  if (id === 'revenue') renderRevenue();
-  if (id === 'customers') renderCustomers();
-}
-
-// ── EXPORT ──
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
 function exportOrders() {
   const blob = new Blob([JSON.stringify(currentOrders, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
@@ -366,20 +648,17 @@ function exportOrders() {
   adm_toast('Exported ' + currentOrders.length + ' orders');
 }
 
-function clearOrders() {
-  if (!confirm('Delete ALL orders from localStorage? (Google Sheets data remains)')) return;
+function clearLocalBackup() {
+  if (!confirm('Clear local backup? (Google Sheets data remains safe)')) return;
   localStorage.removeItem('windy_orders');
-  loadAll();
-  adm_toast('Local orders cleared');
+  adm_toast('Local backup cleared');
 }
 
-// ── CLOCK ──
 function startClock() {
   const el = document.getElementById('sb-time');
   setInterval(() => { el.textContent = new Date().toLocaleTimeString('en-GB'); }, 1000);
 }
 
-// ── TOAST ──
 function adm_toast(msg) {
   const t = document.getElementById('adm-toast');
   t.textContent = msg;
@@ -387,11 +666,24 @@ function adm_toast(msg) {
   setTimeout(() => t.classList.remove('show'), 2400);
 }
 
-// ── INITIAL LOAD ──
-document.addEventListener('DOMContentLoaded', () => {
-  // Check if already logged in
-  if (document.getElementById('app').style.display === 'flex') {
-    loadAll();
-  }
-});
+// ============================================
+// INITIALIZATION
+// ============================================
+// Make functions globally available
+window.loadAll = loadAll;
+window.updateStatus = updateStatus;
+window.cancelOrder = cancelOrder;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.setFilter = setFilter;
+window.showPage = showPage;
+window.exportOrders = exportOrders;
+window.clearLocalBackup = clearLocalBackup;
+window.changePass = changePass;
+window.doLogin = doLogin;
+window.doLogout = doLogout;
+
+console.log('Admin panel ready - fetching from Google Sheets');
 </script>
+</body>
+</html>
