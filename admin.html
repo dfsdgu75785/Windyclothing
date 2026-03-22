@@ -6,6 +6,7 @@
 <title>WINDY — Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,300&display=swap" rel="stylesheet">
 <style>
+  
 :root{
   --warm:#faf8f3;--off:#ede9df;--cream:#f5f0e8;
   --ink:#0e0d0b;--char:#1a1916;--mid:#6b6760;--dim:#9a9690;
@@ -165,17 +166,10 @@ tr:hover td{background:var(--off);}
 #adm-toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:var(--cream);padding:12px 20px;font-size:10px;letter-spacing:2px;text-transform:uppercase;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;border-left:3px solid var(--accent);}
 #adm-toast.show{opacity:1;transform:translateY(0);}
 
-/* LOADING */
-.loading-state{text-align:center;padding:60px 20px;}
-.loading-state p{font-family:'Cormorant Garamond',serif;font-size:18px;font-style:italic;color:var(--dim);animation:pulse 1.4s ease-in-out infinite;}
-@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
-
-/* CONNECTION STATUS */
-.conn-badge{display:inline-flex;align-items:center;gap:6px;font-size:9px;letter-spacing:1px;padding:4px 10px;border:1px solid var(--border);}
-.conn-dot{width:7px;height:7px;border-radius:50%;background:var(--dim);}
-.conn-dot.ok{background:var(--green);}
-.conn-dot.err{background:var(--red);}
-.conn-dot.loading{background:var(--accent);animation:pulse 1s infinite;}
+/* SEED BANNER */
+.seed-banner{background:rgba(200,169,110,.15);border:1px solid rgba(200,169,110,.4);padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.seed-banner p{font-size:10px;letter-spacing:1px;color:#7a5f00;}
+.seed-btn{padding:6px 14px;background:var(--accent);color:#fff;border:none;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;cursor:pointer;white-space:nowrap;}
 
 @media(max-width:900px){
   :root{--sidebar:0px;}
@@ -216,6 +210,8 @@ tr:hover td{background:var(--off);}
 <!-- APP -->
 <div id="app">
   <div class="app-inner">
+
+    <!-- SIDEBAR -->
     <aside>
       <div class="sidebar-logo">
         <div class="s-logo">WINDY</div>
@@ -233,12 +229,10 @@ tr:hover td{background:var(--off);}
       </div>
     </aside>
 
+    <!-- MAIN -->
     <main>
       <div class="topbar">
-        <div style="display:flex;align-items:center;gap:16px">
-          <div class="topbar-title" id="page-title">Orders</div>
-          <div class="conn-badge" id="conn-badge"><span class="conn-dot" id="conn-dot"></span><span id="conn-text">—</span></div>
-        </div>
+        <div class="topbar-title" id="page-title">Orders</div>
         <div class="topbar-right">
           <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
           <button class="logout-btn" onclick="doLogout()">Sign Out</button>
@@ -247,12 +241,8 @@ tr:hover td{background:var(--off);}
 
       <!-- ORDERS PAGE -->
       <div class="page active" id="page-orders">
-        <div class="stat-row" id="order-stats">
-          <div class="stat-card"><div class="sc-label">Total Orders</div><div class="sc-val">—</div></div>
-          <div class="stat-card"><div class="sc-label">Revenue</div><div class="sc-val sc-accent">—</div></div>
-          <div class="stat-card"><div class="sc-label">Pending</div><div class="sc-val sc-red">—</div></div>
-          <div class="stat-card"><div class="sc-label">Today</div><div class="sc-val sc-green">—</div></div>
-        </div>
+        <div class="stat-row" id="order-stats"></div>
+        <div id="seed-wrap"></div>
         <div class="filter-bar">
           <input class="search-box" id="search-box" placeholder="Search name, ref, phone…" oninput="filterOrders()">
           <button class="filter-btn on" onclick="setFilter('all',this)">All</button>
@@ -266,13 +256,19 @@ tr:hover td{background:var(--off);}
           <table>
             <thead>
               <tr>
-                <th>Order Ref</th><th>Date</th><th>Customer</th><th>Phone</th>
-                <th>City</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Actions</th>
+                <th>Order Ref</th>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Phone</th>
+                <th>City</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Payment</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
-            <tbody id="orders-tbody">
-              <tr><td colspan="10"><div class="loading-state"><p>Loading orders…</p></div></td></tr>
-            </tbody>
+            <tbody id="orders-tbody"></tbody>
           </table>
         </div>
       </div>
@@ -281,10 +277,22 @@ tr:hover td{background:var(--off);}
       <div class="page" id="page-revenue">
         <div class="stat-row" id="rev-stats"></div>
         <div class="rev-grid">
-          <div class="rev-card"><h4>Revenue by Product</h4><div class="chart-bar-wrap" id="rev-by-product"></div></div>
-          <div class="rev-card"><h4>Revenue by Payment Method</h4><div class="chart-bar-wrap" id="rev-by-payment"></div></div>
-          <div class="rev-card"><h4>Orders by Status</h4><div class="chart-bar-wrap" id="rev-by-status"></div></div>
-          <div class="rev-card"><h4>Top Customers by Spend</h4><div id="top-customers"></div></div>
+          <div class="rev-card">
+            <h4>Revenue by Product</h4>
+            <div class="chart-bar-wrap" id="rev-by-product"></div>
+          </div>
+          <div class="rev-card">
+            <h4>Revenue by Payment Method</h4>
+            <div class="chart-bar-wrap" id="rev-by-payment"></div>
+          </div>
+          <div class="rev-card">
+            <h4>Orders by Status</h4>
+            <div class="chart-bar-wrap" id="rev-by-status"></div>
+          </div>
+          <div class="rev-card">
+            <h4>Top Customers by Spend</h4>
+            <div id="top-customers"></div>
+          </div>
         </div>
       </div>
 
@@ -294,7 +302,15 @@ tr:hover td{background:var(--off);}
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>Customer</th><th>Phone</th><th>Email</th><th>City</th><th>Orders</th><th>Total Spend</th><th>Last Order</th></tr>
+              <tr>
+                <th>Customer</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>City</th>
+                <th>Orders</th>
+                <th>Total Spend</th>
+                <th>Last Order</th>
+              </tr>
             </thead>
             <tbody id="customers-tbody"></tbody>
           </table>
@@ -315,32 +331,29 @@ tr:hover td{background:var(--off);}
             <button class="s-btn" onclick="changePass()">Update Password</button>
           </div>
           <div class="setting-card">
-            <h4>Google Sheets</h4>
-            <div class="s-field-label">Connected Sheet URL</div>
-            <input class="s-field" id="sheets-url" type="text" placeholder="Apps Script URL">
-            <button class="s-btn" onclick="saveSheetUrl()">Save & Reconnect</button>
-            <div style="margin-top:12px;font-size:9px;color:var(--dim);letter-spacing:1px;line-height:1.8">
-              Orders are fetched live from your Google Sheet.<br>
-              Refresh to sync latest data.
-            </div>
-          </div>
-          <div class="setting-card">
-            <h4>Order Data</h4>
-            <p style="font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:var(--mid);margin-bottom:8px;line-height:1.6;">Export all orders as JSON from the live sheet data.</p>
-            <button class="s-btn" onclick="exportOrders()">Export Orders JSON</button>
-          </div>
-          <div class="setting-card">
             <h4>Store Info</h4>
             <div class="s-field-label">Store Name</div>
             <input class="s-field" value="WINDY" readonly>
             <div class="s-field-label">Email</div>
-            <input class="s-field" value="windyclothinglk@gmail.com">
+            <input class="s-field" value="hello@windy.lk">
             <div class="s-field-label">Phone</div>
-            <input class="s-field" value="+94 74 091 6400">
+            <input class="s-field" value="+94 77 123 4567">
             <button class="s-btn" onclick="adm_toast('Store info saved')">Save Changes</button>
+          </div>
+          <div class="setting-card">
+            <h4>Order Data</h4>
+            <p style="font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:var(--mid);margin-bottom:8px;line-height:1.6;">Export all orders as JSON, or clear all test data from localStorage.</p>
+            <button class="s-btn" onclick="exportOrders()">Export Orders JSON</button>
+            <button class="s-btn danger" onclick="clearOrders()" style="margin-left:8px;">Clear All Orders</button>
+          </div>
+          <div class="setting-card">
+            <h4>Test Data</h4>
+            <p style="font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:var(--mid);margin-bottom:8px;line-height:1.6;">Seed realistic sample orders to preview the dashboard.</p>
+            <button class="s-btn" onclick="seedOrders()">Seed Sample Orders</button>
           </div>
         </div>
       </div>
+
     </main>
   </div>
 </div>
@@ -359,234 +372,83 @@ tr:hover td{background:var(--off);}
 <div id="adm-toast"></div>
 
 <script>
-// ════════════════════════════════════════════════
-// CONFIGURATION — your live Apps Script URL
-// ════════════════════════════════════════════════
-const DEFAULT_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzBpFup2YczGtbFK_8qjUbbQ_YCQ6WjexXa1kV3pxtdvVcLWmrZHq4KU6eyzl3p3fB_/exec';
-
-function getSheetsUrl(){
-  return localStorage.getItem('windy_sheets_url') || DEFAULT_SHEETS_URL;
-}
-function saveSheetUrl(){
-  const val = document.getElementById('sheets-url').value.trim();
-  if(!val){ adm_toast('Enter a valid URL'); return; }
-  localStorage.setItem('windy_sheets_url', val);
-  adm_toast('URL saved — reloading data…');
-  loadAll();
-}
-
-// ════════════════════════════════════════════════
-// AUTH
-// ════════════════════════════════════════════════
-const CREDS_KEY = 'windy_admin_creds';
-function getCreds(){ return JSON.parse(localStorage.getItem(CREDS_KEY)||'{"user":"admin","pass":"windy2026"}'); }
-
+// ── AUTH ──
+const CREDS_KEY='windy_admin_creds';
+function getCreds(){return JSON.parse(localStorage.getItem(CREDS_KEY)||'{"user":"admin","pass":"windy2026"}')}
 function doLogin(){
-  const u = document.getElementById('l-user').value.trim();
-  const p = document.getElementById('l-pass').value;
-  const c = getCreds();
-  if(u===c.user && p===c.pass){
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
-    document.getElementById('sheets-url').value = getSheetsUrl();
+  const u=document.getElementById('l-user').value.trim();
+  const p=document.getElementById('l-pass').value;
+  const c=getCreds();
+  if(u===c.user&&p===c.pass){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
     loadAll();
     startClock();
   } else {
-    document.getElementById('l-err').style.display = 'block';
-    document.getElementById('l-pass').value = '';
+    document.getElementById('l-err').style.display='block';
+    document.getElementById('l-pass').value='';
   }
 }
 function doLogout(){
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
 }
 function changePass(){
-  const cur = document.getElementById('s-cur-pass').value;
-  const nw  = document.getElementById('s-new-pass').value;
-  const cn  = document.getElementById('s-con-pass').value;
-  const c   = getCreds();
-  if(cur !== c.pass){ adm_toast('Current password incorrect'); return; }
-  if(nw.length < 6){ adm_toast('Password must be 6+ characters'); return; }
-  if(nw !== cn){ adm_toast('Passwords do not match'); return; }
-  localStorage.setItem(CREDS_KEY, JSON.stringify({user:c.user, pass:nw}));
+  const cur=document.getElementById('s-cur-pass').value;
+  const nw=document.getElementById('s-new-pass').value;
+  const cn=document.getElementById('s-con-pass').value;
+  const c=getCreds();
+  if(cur!==c.pass){adm_toast('Current password incorrect');return;}
+  if(nw.length<6){adm_toast('Password must be 6+ characters');return;}
+  if(nw!==cn){adm_toast('Passwords do not match');return;}
+  localStorage.setItem(CREDS_KEY,JSON.stringify({user:c.user,pass:nw}));
   adm_toast('Password updated ✓');
-  ['s-cur-pass','s-new-pass','s-con-pass'].forEach(id => document.getElementById(id).value='');
+  ['s-cur-pass','s-new-pass','s-con-pass'].forEach(id=>document.getElementById(id).value='');
 }
 
-// ════════════════════════════════════════════════
-// CONNECTION STATUS UI
-// ════════════════════════════════════════════════
-function setConn(state, msg){
-  const dot  = document.getElementById('conn-dot');
-  const text = document.getElementById('conn-text');
-  dot.className = 'conn-dot ' + state;
-  text.textContent = msg;
-}
-
-// ════════════════════════════════════════════════
-// GOOGLE SHEETS — FETCH ORDERS
-// ════════════════════════════════════════════════
-async function fetchOrdersFromSheets(){
-  setConn('loading', 'Connecting…');
-  try {
-    const url = getSheetsUrl();
-    // Use no-cors as fallback isn't ideal; use JSONP-style via URL param
-    const res = await fetch(url + '?action=getOrders', { method: 'GET' });
-    const result = await res.json();
-
-    if(result && result.success && Array.isArray(result.orders)){
-      setConn('ok', 'Live · ' + result.orders.length + ' orders');
-      return result.orders.map(row => parseSheetRow(row));
-    } else {
-      setConn('err', 'Sheet error');
-      adm_toast('Sheet returned no data — check Apps Script');
-      return [];
-    }
-  } catch(e){
-    console.error('Sheets fetch error:', e);
-    setConn('err', 'Connection failed');
-    adm_toast('Cannot reach Google Sheets — check URL & deployment');
-    return [];
-  }
-}
-
-// Convert a flat sheet row → admin order object
-function parseSheetRow(row){
-  // Items string: "Void Tee — Ivory (S) x1, Phantom Hoodie (M) x2"
-  const itemsStr = row['Items'] || '';
-  const items = itemsStr.split(', ').map(seg => {
-    const m = seg.match(/^(.+?)\s*\(([^)]+)\)\s*x(\d+)$/);
-    if(m) return { name:m[1].trim(), size:m[2], qty:parseInt(m[3]), price:0, icon:'📦' };
-    return { name: seg, qty:1, size:'—', price:0, icon:'📦' };
-  }).filter(i => i.name);
-
-  return {
-    ref:      row['Order ID']       || '',
-    date:     row['Date']           || new Date().toISOString(),
-    status:   row['Status']         || 'Pending',
-    customer: {
-      name:     row['Customer Name'] || '',
-      phone:    row['Phone']         || '',
-      email:    row['Email']         || '',
-      address:  row['Address']       || '',
-      city:     row['City']          || '',
-      province: row['Province']      || '',
-      note:     row['Note']          || ''
-    },
-    items,
-    subtotal: parseFloat(row['Subtotal']) || 0,
-    delivery: parseFloat(row['Delivery']) || 350,
-    total:    parseFloat(row['Total'])    || 0,
-    payment:  (row['Payment Method'] || 'cod').toLowerCase()
-  };
-}
-
-// ════════════════════════════════════════════════
-// GOOGLE SHEETS — UPDATE STATUS
-// ════════════════════════════════════════════════
-async function updateStatusInSheets(orderId, newStatus){
-  try {
-    const url = getSheetsUrl();
-    const formData = new URLSearchParams();
-    formData.append('action', 'updateStatus');
-    formData.append('orderId', orderId);
-    formData.append('status', newStatus);
-    const res = await fetch(url, { method:'POST', body: formData });
-    const result = await res.json();
-    return result && result.success;
-  } catch(e){
-    console.error('Update status error:', e);
-    return false;
-  }
-}
-
-// ════════════════════════════════════════════════
-// STATE
-// ════════════════════════════════════════════════
-let allOrders  = [];   // master list from Sheets
-let filterStatus = 'all';
-
-// ════════════════════════════════════════════════
-// LOAD ALL — single source of truth
-// ════════════════════════════════════════════════
-async function loadAll(){
-  document.getElementById('orders-tbody').innerHTML =
-    '<tr><td colspan="10"><div class="loading-state"><p>Fetching from Google Sheets…</p></div></td></tr>';
-
-  allOrders = await fetchOrdersFromSheets();
-
-  renderStats();
-  filterOrders();
-
-  // Refresh revenue/customers if their page is active
-  const activePage = document.querySelector('.page.active');
-  if(activePage){
-    if(activePage.id === 'page-revenue')   renderRevenue();
-    if(activePage.id === 'page-customers') renderCustomers();
-  }
-}
-
-// ════════════════════════════════════════════════
-// HELPERS
-// ════════════════════════════════════════════════
-function fmtPrice(n){ return 'LKR ' + Number(n).toLocaleString(); }
+// ── ORDERS DATA ──
+function getOrders(){return JSON.parse(localStorage.getItem('windy_orders')||'[]');}
+function saveOrders(o){localStorage.setItem('windy_orders',JSON.stringify(o));}
+function fmtPrice(n){return'LKR '+Number(n).toLocaleString();}
 function fmtDate(iso){
-  const d = new Date(iso);
-  if(isNaN(d)) return iso;
-  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
-       + ' ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  const d=new Date(iso);
+  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
 }
-function statusClass(s){ return 's-' + (s||'pending').toLowerCase(); }
-const PM_LABELS = { card:'💳 Card', cod:'💵 COD', koko:'📱 Koko', bank:'🏦 Bank' };
+function statusClass(s){return's-'+s.toLowerCase();}
+const PM_LABELS={card:'💳 Card',cod:'💵 COD',koko:'📱 Koko',bank:'🏦 Bank'};
 
-// ════════════════════════════════════════════════
-// STATS
-// ════════════════════════════════════════════════
-function renderStats(){
-  const orders = allOrders;
-  const total   = orders.reduce((s,o) => s + (o.total||0), 0);
-  const pending = orders.filter(o => o.status === 'Pending').length;
-  const today   = orders.filter(o => new Date(o.date).toDateString() === new Date().toDateString()).length;
-  document.getElementById('order-stats').innerHTML = `
-    <div class="stat-card"><div class="sc-label">Total Orders</div><div class="sc-val">${orders.length}</div><div class="sc-sub">All time</div></div>
-    <div class="stat-card"><div class="sc-label">Revenue</div><div class="sc-val sc-accent">${fmtPrice(total)}</div><div class="sc-sub">All orders</div></div>
-    <div class="stat-card"><div class="sc-label">Pending</div><div class="sc-val sc-red">${pending}</div><div class="sc-sub">Needs action</div></div>
-    <div class="stat-card"><div class="sc-label">Today</div><div class="sc-val sc-green">${today}</div><div class="sc-sub">New orders</div></div>`;
-}
+let filterStatus='all', currentOrders=[];
 
-// ════════════════════════════════════════════════
-// FILTER + TABLE
-// ════════════════════════════════════════════════
-function setFilter(s, btn){
-  filterStatus = s;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('on'));
+function setFilter(s,btn){
+  filterStatus=s;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   filterOrders();
 }
 
 function filterOrders(){
-  const q = (document.getElementById('search-box').value || '').toLowerCase();
-  const filtered = allOrders.filter(o => {
-    const statusOk = filterStatus === 'all' || o.status === filterStatus;
-    const searchOk = !q
-      || (o.ref||'').toLowerCase().includes(q)
-      || (o.customer.name||'').toLowerCase().includes(q)
-      || (o.customer.phone||'').includes(q)
-      || (o.customer.city||'').toLowerCase().includes(q);
-    return statusOk && searchOk;
+  const q=document.getElementById('search-box').value.toLowerCase();
+  const orders=getOrders();
+  const filtered=orders.filter(o=>{
+    const statusOk=filterStatus==='all'||o.status===filterStatus;
+    const searchOk=!q||o.ref.toLowerCase().includes(q)||
+      (o.customer.name||'').toLowerCase().includes(q)||
+      (o.customer.phone||'').includes(q)||
+      (o.customer.city||'').toLowerCase().includes(q);
+    return statusOk&&searchOk;
   });
   renderOrdersTable(filtered);
 }
 
 function renderOrdersTable(orders){
-  const tb = document.getElementById('orders-tbody');
+  const tb=document.getElementById('orders-tbody');
   if(!orders.length){
-    tb.innerHTML = '<tr><td colspan="10"><div class="empty-state"><p>No orders found.</p></div></td></tr>';
+    tb.innerHTML='<tr><td colspan="10"><div class="empty-state"><p>No orders yet — place a test order from the store!</p></div></td></tr>';
     return;
   }
-  tb.innerHTML = orders.map(o => `
+  tb.innerHTML=orders.map(o=>`
     <tr>
-      <td style="font-family:'DM Mono',monospace">${o.ref}</td>
+      <td style="font-family:'DM Mono',monospace;font-weight:400">${o.ref}</td>
       <td style="white-space:nowrap;color:var(--mid);font-size:10px">${fmtDate(o.date)}</td>
       <td><strong style="font-family:'Cormorant Garamond',serif;font-size:14px">${o.customer.name||'—'}</strong></td>
       <td style="color:var(--mid)">${o.customer.phone||'—'}</td>
@@ -602,15 +464,32 @@ function renderOrdersTable(orders){
     </tr>`).join('');
 }
 
-// ════════════════════════════════════════════════
-// ORDER MODAL
-// ════════════════════════════════════════════════
+function renderStats(){
+  const orders=getOrders();
+  const total=orders.reduce((s,o)=>s+o.total,0);
+  const pending=orders.filter(o=>o.status==='Pending').length;
+  const shipped=orders.filter(o=>o.status==='Shipped'||o.status==='Delivered').length;
+  const today=orders.filter(o=>new Date(o.date).toDateString()===new Date().toDateString()).length;
+  document.getElementById('order-stats').innerHTML=`
+    <div class="stat-card"><div class="sc-label">Total Orders</div><div class="sc-val">${orders.length}</div><div class="sc-sub">All time</div></div>
+    <div class="stat-card"><div class="sc-label">Revenue</div><div class="sc-val sc-accent">${fmtPrice(total)}</div><div class="sc-sub">All orders</div></div>
+    <div class="stat-card"><div class="sc-label">Pending</div><div class="sc-val sc-red">${pending}</div><div class="sc-sub">Needs action</div></div>
+    <div class="stat-card"><div class="sc-label">Today</div><div class="sc-val sc-green">${today}</div><div class="sc-sub">New orders</div></div>`;
+  // seed banner
+  const sb=document.getElementById('seed-wrap');
+  if(!orders.length){
+    sb.innerHTML='<div class="seed-banner"><p>No orders found. Seed sample data to preview the dashboard, or place a real order from the store.</p><button class="seed-btn" onclick="seedOrders()">Seed Sample Orders</button></div>';
+  } else {sb.innerHTML='';}
+}
+
+// ── ORDER MODAL ──
 function openModal(ref){
-  const o = allOrders.find(x => x.ref === ref);
-  if(!o) return;
-  document.getElementById('modal-ref').textContent = o.ref;
-  const statuses = ['Pending','Processing','Shipped','Delivered','Cancelled'];
-  document.getElementById('modal-body').innerHTML = `
+  const orders=getOrders();
+  const o=orders.find(x=>x.ref===ref);
+  if(!o)return;
+  document.getElementById('modal-ref').textContent=o.ref;
+  const statuses=['Pending','Processing','Shipped','Delivered','Cancelled'];
+  document.getElementById('modal-body').innerHTML=`
     <div class="modal-section">
       <div class="modal-section-title">Customer Details</div>
       <div class="info-grid">
@@ -618,8 +497,8 @@ function openModal(ref){
         <div class="info-item"><div class="il">Phone</div><div class="iv">${o.customer.phone||'—'}</div></div>
         <div class="info-item"><div class="il">Email</div><div class="iv">${o.customer.email||'—'}</div></div>
         <div class="info-item"><div class="il">City / Province</div><div class="iv">${o.customer.city||'—'}${o.customer.province?', '+o.customer.province:''}</div></div>
-        <div class="info-item" style="grid-column:1/-1"><div class="il">Address</div><div class="iv">${o.customer.address||'—'}</div></div>
-        ${o.customer.note?`<div class="info-item" style="grid-column:1/-1"><div class="il">Note</div><div class="iv">${o.customer.note}</div></div>`:''}
+        <div class="info-item" style="grid-column:1/-1"><div class="il">Address</div><div class="iv">${o.customer.address||'—'}${o.customer.zip?' — '+o.customer.zip:''}</div></div>
+        ${o.customer.note?`<div class="info-item" style="grid-column:1/-1"><div class="il">Delivery Note</div><div class="iv">${o.customer.note}</div></div>`:''}
       </div>
     </div>
     <div class="modal-section">
@@ -630,7 +509,7 @@ function openModal(ref){
       <div class="total-row grand"><span>Total</span><span>${fmtPrice(o.total)}</span></div>
     </div>
     <div class="modal-section">
-      <div class="modal-section-title">Payment · ${PM_LABELS[o.payment]||o.payment}</div>
+      <div class="modal-section-title">Payment</div>
       <div class="info-grid">
         <div class="info-item"><div class="il">Method</div><div class="iv">${PM_LABELS[o.payment]||o.payment}</div></div>
         <div class="info-item"><div class="il">Order Date</div><div class="iv">${fmtDate(o.date)}</div></div>
@@ -641,116 +520,112 @@ function openModal(ref){
       <select class="status-select" id="modal-status">
         ${statuses.map(s=>`<option value="${s}"${o.status===s?' selected':''}>${s}</option>`).join('')}
       </select>
-      <button class="update-btn" id="update-status-btn" onclick="updateStatus('${ref}')">Update Status →</button>
+      <button class="update-btn" onclick="updateStatus('${ref}')">Update Status →</button>
     </div>`;
   document.getElementById('modal-overlay').classList.add('open');
 }
-function closeModal(){ document.getElementById('modal-overlay').classList.remove('open'); }
-
-async function updateStatus(ref){
-  const btn = document.getElementById('update-status-btn');
-  const newStatus = document.getElementById('modal-status').value;
-  btn.textContent = 'Updating…';
-  btn.disabled = true;
-
-  const ok = await updateStatusInSheets(ref, newStatus);
-
-  if(ok){
-    // Optimistically update local state too
-    const o = allOrders.find(x => x.ref === ref);
-    if(o) o.status = newStatus;
-    closeModal();
-    renderStats();
-    filterOrders();
-    adm_toast('Status updated → ' + newStatus);
-  } else {
-    adm_toast('Failed to update — check Apps Script');
-    btn.textContent = 'Update Status →';
-    btn.disabled = false;
-  }
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+function updateStatus(ref){
+  const orders=getOrders();
+  const idx=orders.findIndex(o=>o.ref===ref);
+  if(idx<0)return;
+  const newStatus=document.getElementById('modal-status').value;
+  orders[idx].status=newStatus;
+  saveOrders(orders);
+  closeModal();loadAll();
+  adm_toast('Status updated → '+newStatus);
+}
+function cancelOrder(ref){
+  if(!confirm('Cancel order '+ref+'?'))return;
+  const orders=getOrders();
+  const idx=orders.findIndex(o=>o.ref===ref);
+  if(idx<0)return;
+  orders[idx].status='Cancelled';
+  saveOrders(orders);loadAll();
+  adm_toast('Order cancelled');
 }
 
-async function cancelOrder(ref){
-  if(!confirm('Cancel order ' + ref + '?')) return;
-  const ok = await updateStatusInSheets(ref, 'Cancelled');
-  if(ok){
-    const o = allOrders.find(x => x.ref === ref);
-    if(o) o.status = 'Cancelled';
-    renderStats(); filterOrders();
-    adm_toast('Order cancelled');
-  } else {
-    adm_toast('Failed to cancel — check Apps Script');
-  }
-}
-
-// ════════════════════════════════════════════════
-// REVENUE PAGE
-// ════════════════════════════════════════════════
+// ── REVENUE PAGE ──
 function renderRevenue(){
-  const orders = allOrders.filter(o => o.status !== 'Cancelled');
-  const total  = orders.reduce((s,o) => s+o.total, 0);
-  const avg    = orders.length ? Math.round(total/orders.length) : 0;
-  const units  = orders.reduce((s,o) => s+o.items.reduce((ss,i) => ss+i.qty,0), 0);
-  document.getElementById('rev-stats').innerHTML = `
+  const orders=getOrders().filter(o=>o.status!=='Cancelled');
+  const total=orders.reduce((s,o)=>s+o.total,0);
+  const avg=orders.length?Math.round(total/orders.length):0;
+  const maxItems=orders.reduce((s,o)=>s+o.items.reduce((ss,i)=>ss+i.qty,0),0);
+  document.getElementById('rev-stats').innerHTML=`
     <div class="stat-card"><div class="sc-label">Gross Revenue</div><div class="sc-val sc-accent">${fmtPrice(total)}</div><div class="sc-sub">Excl. cancelled</div></div>
     <div class="stat-card"><div class="sc-label">Average Order</div><div class="sc-val">${fmtPrice(avg)}</div><div class="sc-sub">Per order</div></div>
-    <div class="stat-card"><div class="sc-label">Units Sold</div><div class="sc-val sc-green">${units}</div><div class="sc-sub">Total items</div></div>
+    <div class="stat-card"><div class="sc-label">Units Sold</div><div class="sc-val sc-green">${maxItems}</div><div class="sc-sub">Total items</div></div>
     <div class="stat-card"><div class="sc-label">Delivery Revenue</div><div class="sc-val">${fmtPrice(orders.length*350)}</div><div class="sc-sub">LKR 350 / order</div></div>`;
 
-  const byProduct = {};
-  orders.forEach(o => o.items.forEach(i => { byProduct[i.name]=(byProduct[i.name]||0)+i.price*i.qty; }));
-  const maxP = Math.max(...Object.values(byProduct),1);
-  document.getElementById('rev-by-product').innerHTML = Object.entries(byProduct).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`
-    <div class="chart-row"><div class="chart-label" style="font-size:8px;width:100px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${n}</div>
-    <div class="chart-track"><div class="chart-fill" style="width:${v/maxP*100}%"></div></div>
-    <div class="chart-num">${fmtPrice(v)}</div></div>`).join('') || '<p style="color:var(--dim);font-size:11px">No data yet</p>';
+  // by product
+  const byProduct={};
+  orders.forEach(o=>o.items.forEach(i=>{byProduct[i.name]=(byProduct[i.name]||0)+i.price*i.qty;}));
+  const maxP=Math.max(...Object.values(byProduct),1);
+  document.getElementById('rev-by-product').innerHTML=Object.entries(byProduct).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`
+    <div class="chart-row">
+      <div class="chart-label" style="font-size:8px;width:100px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${n}</div>
+      <div class="chart-track"><div class="chart-fill" style="width:${v/maxP*100}%"></div></div>
+      <div class="chart-num">${fmtPrice(v)}</div>
+    </div>`).join('')||'<p style="color:var(--dim);font-size:11px">No data yet</p>';
 
-  const byPay = {};
-  orders.forEach(o => { byPay[o.payment]=(byPay[o.payment]||0)+o.total; });
-  const maxPay = Math.max(...Object.values(byPay),1);
-  document.getElementById('rev-by-payment').innerHTML = Object.entries(byPay).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`
-    <div class="chart-row"><div class="chart-label" style="text-align:left;width:70px">${PM_LABELS[n]||n}</div>
-    <div class="chart-track"><div class="chart-fill accent" style="width:${v/maxPay*100}%"></div></div>
-    <div class="chart-num">${fmtPrice(v)}</div></div>`).join('') || '<p style="color:var(--dim);font-size:11px">No data yet</p>';
+  // by payment
+  const byPay={};
+  orders.forEach(o=>{byPay[o.payment]=(byPay[o.payment]||0)+o.total;});
+  const maxPay=Math.max(...Object.values(byPay),1);
+  document.getElementById('rev-by-payment').innerHTML=Object.entries(byPay).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`
+    <div class="chart-row">
+      <div class="chart-label" style="text-align:left;width:60px">${PM_LABELS[n]||n}</div>
+      <div class="chart-track"><div class="chart-fill accent" style="width:${v/maxPay*100}%"></div></div>
+      <div class="chart-num">${fmtPrice(v)}</div>
+    </div>`).join('')||'<p style="color:var(--dim);font-size:11px">No data yet</p>';
 
-  const byStatus = {};
-  allOrders.forEach(o => { byStatus[o.status]=(byStatus[o.status]||0)+1; });
-  const maxSt = Math.max(...Object.values(byStatus),1);
-  document.getElementById('rev-by-status').innerHTML = Object.entries(byStatus).map(([n,v])=>`
-    <div class="chart-row"><div class="chart-label" style="text-align:left;width:80px">${n}</div>
-    <div class="chart-track"><div class="chart-fill" style="width:${v/maxSt*100}%"></div></div>
-    <div class="chart-num">${v} order${v!==1?'s':''}</div></div>`).join('') || '<p style="color:var(--dim);font-size:11px">No data yet</p>';
+  // by status
+  const allOrds=getOrders();
+  const byStatus={};
+  allOrds.forEach(o=>{byStatus[o.status]=(byStatus[o.status]||0)+1;});
+  const maxSt=Math.max(...Object.values(byStatus),1);
+  document.getElementById('rev-by-status').innerHTML=Object.entries(byStatus).map(([n,v])=>`
+    <div class="chart-row">
+      <div class="chart-label" style="text-align:left;width:80px">${n}</div>
+      <div class="chart-track"><div class="chart-fill" style="width:${v/maxSt*100}%"></div></div>
+      <div class="chart-num">${v} order${v!==1?'s':''}</div>
+    </div>`).join('')||'<p style="color:var(--dim);font-size:11px">No data yet</p>';
 
-  const byCustomer = {};
-  allOrders.filter(o=>o.status!=='Cancelled').forEach(o => {
-    const k = o.customer.name||'Unknown';
+  // top customers
+  const byCustomer={};
+  getOrders().filter(o=>o.status!=='Cancelled').forEach(o=>{
+    const k=o.customer.name||'Unknown';
     byCustomer[k]=(byCustomer[k]||0)+o.total;
   });
-  const sorted = Object.entries(byCustomer).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  document.getElementById('top-customers').innerHTML = sorted.map(([n,v],i)=>`
-    <div class="top-item"><div class="top-rank">${i+1}</div><div class="top-name">${n}</div><div class="top-val">${fmtPrice(v)}</div></div>`).join('') || '<p style="color:var(--dim);font-size:11px;padding:12px 0">No data yet</p>';
+  const sorted=Object.entries(byCustomer).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  document.getElementById('top-customers').innerHTML=sorted.map(([n,v],i)=>`
+    <div class="top-item">
+      <div class="top-rank">${i+1}</div>
+      <div class="top-name">${n}</div>
+      <div class="top-val">${fmtPrice(v)}</div>
+    </div>`).join('')||'<p style="color:var(--dim);font-size:11px;padding:12px 0">No data yet</p>';
 }
 
-// ════════════════════════════════════════════════
-// CUSTOMERS PAGE
-// ════════════════════════════════════════════════
+// ── CUSTOMERS PAGE ──
 function renderCustomers(){
-  const map = {};
-  allOrders.forEach(o => {
-    const k = o.customer.phone || o.customer.name || 'Unknown';
-    if(!map[k]){ map[k]={name:o.customer.name,phone:o.customer.phone,email:o.customer.email,city:o.customer.city,orders:0,total:0,last:o.date}; }
-    map[k].orders++; map[k].total += o.total;
-    if(new Date(o.date) > new Date(map[k].last)) map[k].last = o.date;
+  const orders=getOrders();
+  const map={};
+  orders.forEach(o=>{
+    const k=o.customer.phone||o.customer.name||'Unknown';
+    if(!map[k]){map[k]={name:o.customer.name,phone:o.customer.phone,email:o.customer.email,city:o.customer.city,orders:0,total:0,last:o.date};}
+    map[k].orders++;
+    map[k].total+=o.total;
+    if(new Date(o.date)>new Date(map[k].last))map[k].last=o.date;
   });
-  const customers = Object.values(map).sort((a,b)=>b.total-a.total);
-  document.getElementById('cust-stats').innerHTML = `
+  const customers=Object.values(map).sort((a,b)=>b.total-a.total);
+  document.getElementById('cust-stats').innerHTML=`
     <div class="stat-card"><div class="sc-label">Total Customers</div><div class="sc-val">${customers.length}</div></div>
     <div class="stat-card"><div class="sc-label">Repeat Buyers</div><div class="sc-val sc-green">${customers.filter(c=>c.orders>1).length}</div></div>
-    <div class="stat-card"><div class="sc-label">Kurunegala</div><div class="sc-val">${customers.filter(c=>(c.city||'').toLowerCase().includes('kurunegala')).length}</div></div>
+    <div class="stat-card"><div class="sc-label">Colombo Customers</div><div class="sc-val">${customers.filter(c=>(c.city||'').toLowerCase().includes('colombo')).length}</div></div>
     <div class="stat-card"><div class="sc-label">Avg. Spend</div><div class="sc-val sc-accent">${fmtPrice(customers.length?Math.round(customers.reduce((s,c)=>s+c.total,0)/customers.length):0)}</div></div>`;
-  const tb = document.getElementById('customers-tbody');
-  if(!customers.length){ tb.innerHTML='<tr><td colspan="7"><div class="empty-state"><p>No customers yet.</p></div></td></tr>'; return; }
-  tb.innerHTML = customers.map(c=>`
+  const tb=document.getElementById('customers-tbody');
+  if(!customers.length){tb.innerHTML='<tr><td colspan="7"><div class="empty-state"><p>No customers yet.</p></div></td></tr>';return;}
+  tb.innerHTML=customers.map(c=>`
     <tr>
       <td><strong style="font-family:'Cormorant Garamond',serif;font-size:14px">${c.name||'—'}</strong></td>
       <td>${c.phone||'—'}</td>
@@ -762,47 +637,256 @@ function renderCustomers(){
     </tr>`).join('');
 }
 
-// ════════════════════════════════════════════════
-// NAVIGATION
-// ════════════════════════════════════════════════
-function showPage(id, el){
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+// ── PAGE NAVIGATION ──
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  if(el) el.classList.add('active');
-  const titles = {orders:'Orders',revenue:'Revenue',customers:'Customers',settings:'Settings'};
-  document.getElementById('page-title').textContent = titles[id]||id;
-  if(id==='revenue')   renderRevenue();
-  if(id==='customers') renderCustomers();
+  if(el)el.classList.add('active');
+  const titles={orders:'Orders',revenue:'Revenue',customers:'Customers',settings:'Settings'};
+  document.getElementById('page-title').textContent=titles[id]||id;
+  if(id==='revenue')renderRevenue();
+  if(id==='customers')renderCustomers();
 }
 
-// ════════════════════════════════════════════════
-// EXPORT
-// ════════════════════════════════════════════════
+function loadAll(){
+  renderStats();
+  filterOrders();
+}
+
+// ── SEED DATA ──
+function seedOrders(){
+  const names=['Kavinda Perera','Nimali Fernando','Sahan De Silva','Ruwani Jayawardena','Ashen Bandara','Dilini Ratnayake','Chathura Wijesinghe','Malsha Kumari'];
+  const cities=['Colombo','Gampaha','Kandy','Negombo','Galle','Matara','Kurunegala','Ratnapura'];
+  const provinces=['Western','Western','Central','Western','Southern','Southern','North Western','Sabaragamuwa'];
+  const products=[
+    {name:'Void Tee — Ivory',price:8900,icon:'👕'},
+    {name:'Phantom Hoodie',price:14900,icon:'🧥'},
+    {name:'Kolam Cargo',price:12500,icon:'👖'},
+    {name:'Static Jacket',price:19900,icon:'🧥'},
+    {name:'Signal Cap',price:5500,icon:'🧢'}
+  ];
+  const statuses=['Pending','Processing','Shipped','Delivered','Delivered','Pending'];
+  const payMethods=['card','cod','koko','card','cod'];
+  const sizes=['S','M','L','XL','30','32'];
+
+  const seeds=Array.from({length:18},(_,i)=>{
+    const ni=i%names.length;
+    const ci=i%cities.length;
+    const items=Array.from({length:Math.ceil(Math.random()*2)},()=>{
+      const p=products[Math.floor(Math.random()*products.length)];
+      return{...p,qty:1,size:sizes[Math.floor(Math.random()*sizes.length)]};
+    });
+    const subtotal=items.reduce((s,it)=>s+it.price*it.qty,0);
+    const daysAgo=Math.floor(Math.random()*30);
+    const d=new Date(); d.setDate(d.getDate()-daysAgo);
+    return{
+      ref:'WDY-'+String(10000+i*317%90000),
+      date:d.toISOString(),
+      status:statuses[i%statuses.length],
+      customer:{name:names[ni],phone:'+94 7'+Math.floor(1000000+Math.random()*8999999),email:names[ni].split(' ')[0].toLowerCase()+'@gmail.com',address:(10+i*7)%200+' '+['Galle Road','Kandy Road','High Level Road','Marine Drive'][i%4],city:cities[ci],zip:String(10000+i*1234%89999),province:provinces[ci],note:''},
+      items,subtotal,delivery:350,total:subtotal+350,
+      payment:payMethods[i%payMethods.length]
+    };
+  });
+  const existing=getOrders();
+  saveOrders([...seeds,...existing]);
+  loadAll();
+  adm_toast('18 sample orders seeded ✓');
+}
+
+// ── EXPORT ──
 function exportOrders(){
-  const blob = new Blob([JSON.stringify(allOrders,null,2)],{type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'windy_orders_'+new Date().toISOString().slice(0,10)+'.json';
+  const orders=getOrders();
+  const blob=new Blob([JSON.stringify(orders,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='windy_orders_'+new Date().toISOString().slice(0,10)+'.json';
   a.click();
-  adm_toast('Exported '+allOrders.length+' orders');
+  adm_toast('Exported '+orders.length+' orders');
+}
+function clearOrders(){
+  if(!confirm('Delete ALL orders? This cannot be undone.'))return;
+  localStorage.removeItem('windy_orders');
+  loadAll();adm_toast('All orders cleared');
 }
 
-// ════════════════════════════════════════════════
-// CLOCK & TOAST
-// ════════════════════════════════════════════════
+// ── CLOCK ──
 function startClock(){
-  const el = document.getElementById('sb-time');
-  setInterval(()=>{ el.textContent = new Date().toLocaleTimeString('en-GB'); }, 1000);
-}
-function adm_toast(msg){
-  const t = document.getElementById('adm-toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2600);
+  const el=document.getElementById('sb-time');
+  setInterval(()=>{el.textContent=new Date().toLocaleTimeString('en-GB');},1000);
 }
 
-// Enter key on login
-document.getElementById('l-user').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('l-pass').focus(); });
+// ── TOAST ──
+function adm_toast(msg){
+  const t=document.getElementById('adm-toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+// enter key on login
+document.getElementById('l-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('l-pass').focus();});
+</script>
+<script>
+// Google Sheets API Configuration
+const SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbyWye0ewkt6F9qMl9AyhGmd8TIZ1OKqAAkQVuejmneGyMrYAY9ZoggLH9sF3eX2lqQh/exec'; // Replace with your actual URL
+
+// Fetch orders from Google Sheets
+async function fetchOrdersFromSheets() {
+  try {
+    const response = await fetch(`${SHEETS_API_URL}?action=getOrders`);
+    const result = await response.json();
+    
+    if (result.success) {
+      // Convert Google Sheets data to match your existing order format
+      const orders = result.orders.map(row => ({
+        ref: row['Order ID'],
+        date: row['Date'],
+        status: row['Status'],
+        customer: {
+          name: row['Customer Name'],
+          phone: row['Phone'],
+          email: row['Email'],
+          address: row['Address'],
+          city: row['City'],
+          province: row['Province']
+        },
+        items: row['Items'].split(', ').map(item => {
+          // Parse items string back to object format
+          const match = item.match(/(.+) \(([^)]+)\) x(\d+)/);
+          if (match) {
+            return {
+              name: match[1],
+              size: match[2],
+              qty: parseInt(match[3]),
+              price: 0 // You might want to store price separately
+            };
+          }
+          return { name: item, qty: 1 };
+        }),
+        subtotal: parseFloat(row['Subtotal']) || 0,
+        delivery: parseFloat(row['Delivery']) || 0,
+        total: parseFloat(row['Total']) || 0,
+        payment: row['Payment Method']
+      }));
+      
+      return orders;
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching from Google Sheets:', error);
+    return [];
+  }
+}
+
+// Update order status in Google Sheets
+async function updateStatusInSheets(orderId, newStatus) {
+  try {
+    const formData = new URLSearchParams();
+    formData.append('action', 'updateStatus');
+    formData.append('orderId', orderId);
+    formData.append('status', newStatus);
+    
+    const response = await fetch(SHEETS_API_URL, {
+      method: 'POST',
+      body: formData
+    });
+    
+    const result = await response.json();
+    return result.success;
+  } catch (error) {
+    console.error('Error updating status:', error);
+    return false;
+  }
+}
+
+// Modified updateStatus function
+async function updateStatus(ref) {
+  const newStatus = document.getElementById('modal-status').value;
+  const success = await updateStatusInSheets(ref, newStatus);
+  
+  if (success) {
+    // Also update local storage if you're using it as backup
+    let orders = JSON.parse(localStorage.getItem('windy_orders') || '[]');
+    const idx = orders.findIndex(o => o.ref === ref);
+    if (idx >= 0) {
+      orders[idx].status = newStatus;
+      localStorage.setItem('windy_orders', JSON.stringify(orders));
+    }
+    
+    closeModal();
+    await loadAll(); // Refresh the view
+    adm_toast('Status updated → ' + newStatus);
+  } else {
+    adm_toast('Error updating status');
+  }
+}
+
+// Modified loadAll function to fetch from Google Sheets
+async function loadAll() {
+  // Show loading state
+  document.getElementById('orders-tbody').innerHTML = '<tr><td colspan="10"><div class="empty-state"><p>Loading orders from Google Sheets...</p></div></td></tr>';
+  
+  // Fetch orders from Google Sheets
+  const orders = await fetchOrdersFromSheets();
+  
+  // Also load from localStorage as backup
+  const localOrders = JSON.parse(localStorage.getItem('windy_orders') || '[]');
+  
+  // Merge orders (Google Sheets takes priority)
+  const allOrders = [...orders, ...localOrders.filter(local => !orders.some(sheet => sheet.ref === local.ref))];
+  
+  // Save merged orders to window object for filtering
+  window.currentOrders = allOrders;
+  
+  renderStats(allOrders);
+  renderOrdersTable(allOrders);
+}
+
+// Modified renderStats to use passed orders
+function renderStats(orders) {
+  const total = orders.reduce((s, o) => s + (o.total || 0), 0);
+  const pending = orders.filter(o => o.status === 'Pending').length;
+  const shipped = orders.filter(o => o.status === 'Shipped' || o.status === 'Delivered').length;
+  const today = orders.filter(o => new Date(o.date).toDateString() === new Date().toDateString()).length;
+  
+  document.getElementById('order-stats').innerHTML = `
+    <div class="stat-card"><div class="sc-label">Total Orders</div><div class="sc-val">${orders.length}</div><div class="sc-sub">All time</div></div>
+    <div class="stat-card"><div class="sc-label">Revenue</div><div class="sc-val sc-accent">${fmtPrice(total)}</div><div class="sc-sub">All orders</div></div>
+    <div class="stat-card"><div class="sc-label">Pending</div><div class="sc-val sc-red">${pending}</div><div class="sc-sub">Needs action</div></div>
+    <div class="stat-card"><div class="sc-label">Today</div><div class="sc-val sc-green">${today}</div><div class="sc-sub">New orders</div></div>`;
+  
+  const sb = document.getElementById('seed-wrap');
+  if (!orders.length) {
+    sb.innerHTML = '<div class="seed-banner"><p>No orders found. Place a test order from the store to see it appear here!</p><button class="seed-btn" onclick="seedOrders()">Seed Sample Orders</button></div>';
+  } else {
+    sb.innerHTML = '';
+  }
+}
+
+// Modified filterOrders to use window.currentOrders
+function filterOrders() {
+  const q = document.getElementById('search-box').value.toLowerCase();
+  const orders = window.currentOrders || [];
+  const filtered = orders.filter(o => {
+    const statusOk = filterStatus === 'all' || o.status === filterStatus;
+    const searchOk = !q || 
+      (o.ref || '').toLowerCase().includes(q) ||
+      (o.customer?.name || '').toLowerCase().includes(q) ||
+      (o.customer?.phone || '').includes(q) ||
+      (o.customer?.city || '').toLowerCase().includes(q);
+    return statusOk && searchOk;
+  });
+  renderOrdersTable(filtered);
+}
+
+// Update the initial load
+document.addEventListener('DOMContentLoaded', () => {
+  // Only auto-load if admin is logged in
+  if (document.getElementById('app').style.display === 'flex') {
+    loadAll();
+  }
+});
 </script>
 </body>
 </html>
