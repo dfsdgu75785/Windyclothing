@@ -561,6 +561,31 @@ async function updateStatus(ref) {
     adm_toast('Error updating status');
   }
 }
+  // This function sends the status update to Google Sheets
+async function updateStatusInSheets(orderId, newStatus) {
+  try {
+    console.log('Updating order:', orderId, 'to status:', newStatus);
+    console.log('API URL:', SHEETS_API_URL);
+    
+    const formData = new URLSearchParams();
+    formData.append('action', 'updateStatus');
+    formData.append('orderId', orderId);
+    formData.append('status', newStatus);
+    
+    const response = await fetch(SHEETS_API_URL, {
+      method: 'POST',
+      body: formData
+    });
+    
+    const result = await response.json();
+    console.log('Update response:', result);
+    
+    return result.success === true;
+  } catch (error) {
+    console.error('Error updating status:', error);
+    return false;
+  }
+}
 
 async function cancelOrder(ref) {
   if (!confirm('Cancel order ' + ref + '?')) return;
