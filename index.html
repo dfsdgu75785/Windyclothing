@@ -825,11 +825,11 @@ footer{border-top:1px solid var(--brd);display:grid;grid-template-columns:2fr 1f
         <input type="text" name="subject" placeholder="Subject" required class="ff" style="background: var(--ww); border: none; border-top: 1px solid var(--brd); width: 100%; padding: 17px 19px;">
         <textarea name="message" placeholder="Message" required class="ff" style="background: var(--ww); border: none; border-top: 1px solid var(--brd); height: 120px; padding: 17px 19px;"></textarea>
         
-        <!-- FormSubmit.co configuration -->
+        <!-- FormSubmit.co configuration - REMOVED the _next line -->
         <input type="hidden" name="_captcha" value="false">
         <input type="hidden" name="_template" value="table">
         <input type="hidden" name="_subject" value="New WINDY Contact Message">
-        <input type="hidden" name="_next" value="https://your-site.netlify.app/thanks.html">
+        <!-- <input type="hidden" name="_next" value="https://your-site.netlify.app/thanks.html">  ← REMOVE or COMMENT THIS LINE -->
         
         <button type="submit" class="ff btn-ink" style="border: none; text-align: center; cursor: pointer; font-size: 10px; letter-spacing: 3px; padding: 17px 19px;">Send Message →</button>
       </form>
